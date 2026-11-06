@@ -1,13 +1,73 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialMockData } from '../data/mockData';
+import { alHadithaEmployees, matchEmployeeByIdAndName } from '../data/employeesData';
+import { getEmployeeRealtimeAllocations, calculateMonthCalendar, MEAL_WINDOWS } from '../utils/allocationEngine';
+import { computeCategoryFinance } from '../utils/financeEngine';
 
 const AppContext = createContext(null);
+const STORAGE_KEY = 'alhaditha_mess_clean_v3';
 
 export function AppProvider({ children }) {
-  const [data, setData] = useState(initialMockData);
-  const [currency, setCurrency] = useState('SAR'); // Default matching reference screenshot, toggleable to OMR
+  const [data, setData] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.employees || parsed.employees.length !== 100) {
+          parsed.employees = alHadithaEmployees;
+        }
+        // Harmonize finance data with real meal entries
+        const fin = computeCategoryFinance({
+          financeOverview: parsed.financeOverview,
+          mealEntries: parsed.mealEntries || []
+        });
+        parsed.financeOverview = {
+          ...parsed.financeOverview,
+          monthlyExpenditure: fin.totalActual,
+          monthlyRemaining: fin.totalRemaining,
+          utilizationRate: fin.utilizationRate,
+          budgetVsActual: fin.budgetVsActual,
+          budgetStatus: fin.budgetStatus,
+        };
+        return parsed;
+      }
+    } catch {
+      // Ignore parse errors, fallback to initial
+    }
+    return {
+      ...initialMockData,
+      employees: alHadithaEmployees,
+    };
+  });
+
+  const [currency, setCurrency] = useState('OMR'); // Strictly OMR (Omani Rial)
   const [toasts, setToasts] = useState([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Sync to local storage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      // Storage quota or private mode fallback
+    }
+  }, [data]);
+
+  // Cross-tab real-time sync: when an entry is recorded in Entry Panel in another tab, update immediately
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setData(parsed);
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Toast notification helper
   const addToast = (message, type = 'success') => {
@@ -168,6 +228,385 @@ export function AppProvider({ children }) {
     addToast('Meal consumption log submitted.');
   };
 
+  // Verification helper against 100 Al-Haditha Employees
+  const verifyEmployeeMatch = (idInput, nameInput) => {
+    return matchEmployeeByIdAndName(idInput, nameInput);
+  };
+
+  // Real-time Meal Entry Recording (Updates Entry Panel, Dashboard, Quotas, Finance)
+  const recordMealEntry = ({ 
+    employeeId, 
+    employeeName, 
+    mealType = 'Lunch', 
+    facility = 'Main Camp Mess Hall', 
+    allowDuplicate = false,
+    customDate = null,
+    customTimestamp = null,
+    effectiveDate = null
+  }) => {
+    const matchResult = matchEmployeeByIdAndName(employeeId, employeeName);
+    if (!matchResult.matched) {
+      return matchResult;
+    }
+
+    const emp = matchResult.employee;
+    const now = effectiveDate ? (effectiveDate instanceof Date ? effectiveDate : new Date(effectiveDate)) : new Date();
+    const todayStr = customDate || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // Get all meals logged by this employee today
+    const todayEmpEntries = (data.mealEntries || []).filter(
+      (m) => m.employeeId === emp.id && m.date === todayStr
+    );
+
+    // If already consumed 3 meals today and duplicate not explicitly authorized, warn max reached
+    if (todayEmpEntries.length >= 3 && !allowDuplicate) {
+      const currentAllocations = getEmployeeRealtimeAllocations({
+        employeeId: emp.id,
+        mealEntries: data.mealEntries || [],
+        currentDate: now
+      });
+      return {
+        matched: true,
+        isDuplicate: true,
+        employee: emp,
+        allocations: currentAllocations,
+        message: `Employee ${emp.name} has already consumed all 3 daily allocations today (Breakfast, Lunch, Dinner).`,
+      };
+    }
+
+    // Determine target meal window: if the requested mealType is already logged today, assign the next open slot
+    let finalMealType = mealType;
+    const alreadyHasRequestedSlot = todayEmpEntries.some(m => m.mealType?.toLowerCase() === mealType?.toLowerCase());
+    if (alreadyHasRequestedSlot) {
+      const availableSlots = ['Breakfast', 'Lunch', 'Dinner'];
+      const openSlot = availableSlots.find(slot => !todayEmpEntries.some(m => m.mealType?.toLowerCase() === slot.toLowerCase()));
+      if (openSlot) {
+        finalMealType = openSlot;
+      }
+    }
+
+    const timeStr = customTimestamp || now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const newEntry = {
+      id: `MEAL-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`,
+      employeeId: emp.id,
+      employeeName: emp.name,
+      category: emp.category,
+      department: emp.department,
+      designation: emp.designation,
+      mealType: finalMealType,
+      facility,
+      timestamp: timeStr,
+      date: todayStr,
+      status: 'Verified',
+    };
+
+    const catKey = emp.category.toLowerCase(); // 'junior', 'senior', 'vip'
+    const mealRate = data.financeOverview?.categoryRates?.[catKey]?.rate || 10;
+
+    let computedAllocations = null;
+
+    setData((prev) => {
+      const currentEntries = prev.mealEntries || [];
+      const updatedMealEntries = [newEntry, ...currentEntries];
+      
+      computedAllocations = getEmployeeRealtimeAllocations({
+        employeeId: emp.id,
+        mealEntries: updatedMealEntries,
+        currentDate: now
+      });
+
+      // 1. Update Employee Overview eating counts
+      const prevCat = prev.employeeOverview?.[catKey] || { total: 40, eating: 0, percentage: 0 };
+      const newEating = (prevCat.eating || 0) + 1;
+      const totalEmp = prevCat.total || 40;
+      const newPercentage = Math.min(100, Math.round((newEating / totalEmp) * 100));
+
+      const updatedEmployeeOverview = {
+        ...prev.employeeOverview,
+        [catKey]: {
+          ...prevCat,
+          eating: newEating,
+          percentage: newPercentage,
+        },
+      };
+
+      // 2. Update Wastage Control consumption metrics
+      const newConsumed = (prev.wastageOverview?.consumedMeals || 0) + 1;
+      const totalAllocated = prev.wastageOverview?.totalAllocated || 2500;
+      const updatedWastage = {
+        ...prev.wastageOverview,
+        consumedMeals: newConsumed,
+        consumptionPercentage: Math.min(100, Math.round((newConsumed / totalAllocated) * 100)),
+      };
+
+      // 3. Update Meal Allocation Quotas (consumedCredits & remainingCredits)
+      const updatedCategories = (prev.mealAllocation?.categories || []).map((c) => {
+        if (c.category.toLowerCase() === catKey) {
+          const newCreditsConsumed = (c.consumedCredits || 0) + 1;
+          const totalCredits = c.monthlyCredits || (c.totalEmployees * 22 * 3);
+          return {
+            ...c,
+            consumedCredits: newCreditsConsumed,
+            remainingCredits: Math.max(0, totalCredits - newCreditsConsumed),
+          };
+        }
+        return c;
+      });
+
+      // 4. Update Finance budget metrics synced with meal entries
+      const fin = computeCategoryFinance({
+        financeOverview: prev.financeOverview,
+        mealEntries: updatedMealEntries
+      });
+
+      return {
+        ...prev,
+        mealEntries: updatedMealEntries,
+        employeeOverview: updatedEmployeeOverview,
+        wastageOverview: updatedWastage,
+        mealAllocation: {
+          ...prev.mealAllocation,
+          categories: updatedCategories,
+        },
+        financeOverview: {
+          ...prev.financeOverview,
+          monthlyExpenditure: fin.totalActual,
+          monthlyRemaining: fin.totalRemaining,
+          utilizationRate: fin.utilizationRate,
+          budgetVsActual: fin.budgetVsActual,
+          budgetStatus: fin.budgetStatus,
+        },
+      };
+    });
+
+    addToast(`Approved: ${emp.name} (${emp.category}) checked in for ${finalMealType}! 1 allocation deducted.`, 'success');
+
+    return {
+      matched: true,
+      success: true,
+      employee: emp,
+      entry: newEntry,
+      allocations: computedAllocations,
+      message: `APPROVED: Meal recorded for ${emp.name}`,
+    };
+  };
+
+  const deleteMealEntry = (entryId) => {
+    setData((prev) => {
+      const target = (prev.mealEntries || []).find((e) => e.id === entryId);
+      if (!target) return prev;
+      const catKey = target.category.toLowerCase();
+      const prevCat = prev.employeeOverview[catKey];
+      const newEating = Math.max(0, (prevCat?.eating || 1) - 1);
+      const totalEmp = prevCat?.total || 40;
+      const newPercentage = Math.round((newEating / totalEmp) * 100);
+
+      const newConsumed = Math.max(0, (prev.wastageOverview?.consumedMeals || 1) - 1);
+      const mealRate = prev.financeOverview?.categoryRates?.[catKey]?.rate || 10;
+
+      const remainingEntries = prev.mealEntries.filter((e) => e.id !== entryId);
+      const fin = computeCategoryFinance({
+        financeOverview: prev.financeOverview,
+        mealEntries: remainingEntries
+      });
+
+      return {
+        ...prev,
+        mealEntries: remainingEntries,
+        employeeOverview: {
+          ...prev.employeeOverview,
+          [catKey]: {
+            ...prevCat,
+            eating: newEating,
+            percentage: newPercentage,
+          },
+        },
+        wastageOverview: {
+          ...prev.wastageOverview,
+          consumedMeals: newConsumed,
+          consumptionPercentage: Math.round((newConsumed / (prev.wastageOverview?.totalAllocated || 300)) * 100),
+        },
+        financeOverview: {
+          ...prev.financeOverview,
+          monthlyExpenditure: fin.totalActual,
+          monthlyRemaining: fin.totalRemaining,
+          utilizationRate: fin.utilizationRate,
+          budgetVsActual: fin.budgetVsActual,
+          budgetStatus: fin.budgetStatus,
+        },
+      };
+    });
+    addToast('Meal entry removed.', 'info');
+  };
+
+  const resetAllEntriesToZero = () => {
+    const fin = computeCategoryFinance({
+      financeOverview: { monthlyTotalBudget: 65000 },
+      mealEntries: []
+    });
+
+    setData((prev) => ({
+      ...prev,
+      mealEntries: [],
+      employeeOverview: {
+        junior: { ...prev.employeeOverview.junior, total: 40, eating: 0, percentage: 0 },
+        senior: { ...prev.employeeOverview.senior, total: 40, eating: 0, percentage: 0 },
+        vip: { ...prev.employeeOverview.vip, total: 20, eating: 0, percentage: 0 },
+      },
+      wastageOverview: {
+        ...prev.wastageOverview,
+        consumedMeals: 0,
+        wastedMeals: 0,
+        consumptionPercentage: 0,
+        records: []
+      },
+      mealAllocation: {
+        ...prev.mealAllocation,
+        categories: (prev.mealAllocation?.categories || []).map((c) => ({
+          ...c,
+          consumedCredits: 0,
+          remainingCredits: c.monthlyCredits || (c.totalEmployees * 22 * 3),
+        })),
+      },
+      financeOverview: {
+        ...prev.financeOverview,
+        monthlyExpenditure: 0,
+        monthlyRemaining: prev.financeOverview?.monthlyTotalBudget || 65000,
+        utilizationRate: 0,
+        budgetVsActual: fin.budgetVsActual,
+        budgetStatus: fin.budgetStatus,
+      },
+    }));
+    addToast('All meal entries reset to 0. Ready for testing!', 'info');
+  };
+
+  // Add Employee to Master Roster
+  const addEmployee = ({ id, name, category = 'Junior', department = 'Field Operations', designation = 'Operator', shift = 'Day Shift' }) => {
+    const cleanId = id.trim().toUpperCase();
+    const cleanName = name.trim();
+
+    if (!cleanId || !cleanName) {
+      addToast('Both Employee ID and Name are required.', 'error');
+      return { success: false, message: 'ID and Name are required.' };
+    }
+
+    const exists = (data.employees || []).some((e) => e.id.toUpperCase() === cleanId);
+    if (exists) {
+      addToast(`Employee with ID ${cleanId} already exists.`, 'error');
+      return { success: false, message: `Employee ID ${cleanId} already exists.` };
+    }
+
+    const newEmp = {
+      id: cleanId,
+      name: cleanName,
+      category,
+      department,
+      designation,
+      shift,
+      email: `${cleanName.toLowerCase().replace(/[^a-z]/g, '.')}@alhaditha.om`,
+      phone: `+968 9${Math.floor(1000000 + Math.random() * 9000000)}`,
+      status: 'Active',
+      joinDate: new Date().toISOString().split('T')[0],
+    };
+
+    const catKey = category.toLowerCase();
+
+    setData((prev) => {
+      const prevCat = prev.employeeOverview?.[catKey] || { total: 0, eating: 0, percentage: 0 };
+      const newTotal = (prevCat.total || 0) + 1;
+      const eating = prevCat.eating || 0;
+      const newPercentage = Math.round((eating / newTotal) * 100);
+
+      const updatedCategories = (prev.mealAllocation?.categories || []).map((c) => {
+        if (c.category.toLowerCase() === catKey) {
+          const newEmps = (c.totalEmployees || 0) + 1;
+          const monthlyCredits = newEmps * (prev.mealAllocation?.workingDays || 22) * 3;
+          return {
+            ...c,
+            totalEmployees: newEmps,
+            monthlyCredits,
+            remainingCredits: monthlyCredits - (c.consumedCredits || 0),
+          };
+        }
+        return c;
+      });
+
+      return {
+        ...prev,
+        employees: [newEmp, ...(prev.employees || [])],
+        employeeOverview: {
+          ...prev.employeeOverview,
+          [catKey]: {
+            ...prevCat,
+            total: newTotal,
+            percentage: newPercentage,
+          },
+        },
+        mealAllocation: {
+          ...prev.mealAllocation,
+          categories: updatedCategories,
+        },
+      };
+    });
+
+    addToast(`Employee ${cleanName} (${cleanId}) added to ${category} category.`, 'success');
+    return { success: true, employee: newEmp };
+  };
+
+  // Delete Employee from Master Roster
+  const deleteEmployee = (employeeId) => {
+    const cleanId = employeeId.trim().toUpperCase();
+    const target = (data.employees || []).find((e) => e.id.toUpperCase() === cleanId);
+    if (!target) {
+      addToast(`Employee with ID ${cleanId} not found.`, 'error');
+      return { success: false };
+    }
+
+    const catKey = target.category.toLowerCase();
+
+    setData((prev) => {
+      const prevCat = prev.employeeOverview?.[catKey] || { total: 1, eating: 0, percentage: 0 };
+      const newTotal = Math.max(0, (prevCat.total || 1) - 1);
+      const newEating = Math.min(newTotal, prevCat.eating || 0);
+      const newPercentage = newTotal > 0 ? Math.round((newEating / newTotal) * 100) : 0;
+
+      const updatedCategories = (prev.mealAllocation?.categories || []).map((c) => {
+        if (c.category.toLowerCase() === catKey) {
+          const newEmps = Math.max(0, (c.totalEmployees || 1) - 1);
+          const monthlyCredits = newEmps * (prev.mealAllocation?.workingDays || 22) * 3;
+          return {
+            ...c,
+            totalEmployees: newEmps,
+            monthlyCredits,
+            remainingCredits: Math.max(0, monthlyCredits - (c.consumedCredits || 0)),
+          };
+        }
+        return c;
+      });
+
+      return {
+        ...prev,
+        employees: (prev.employees || []).filter((e) => e.id.toUpperCase() !== cleanId),
+        employeeOverview: {
+          ...prev.employeeOverview,
+          [catKey]: {
+            ...prevCat,
+            total: newTotal,
+            eating: newEating,
+            percentage: newPercentage,
+          },
+        },
+        mealAllocation: {
+          ...prev.mealAllocation,
+          categories: updatedCategories,
+        },
+      };
+    });
+
+    addToast(`Employee ${target.name} (${cleanId}) removed from database.`, 'info');
+    return { success: true };
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -187,6 +626,12 @@ export function AppProvider({ children }) {
         updateTimetableMeal,
         generateMonthlyAllocation,
         logWasteRecord,
+        verifyEmployeeMatch,
+        recordMealEntry,
+        deleteMealEntry,
+        resetAllEntriesToZero,
+        addEmployee,
+        deleteEmployee,
       }}
     >
       {children}

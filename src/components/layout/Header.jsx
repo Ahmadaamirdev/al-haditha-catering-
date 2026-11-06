@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Menu, Calendar, ChevronDown, User, Check, Shield, Bell } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Menu, Calendar, ChevronDown, User, Check, Shield, Bell, UserCheck } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export default function Header() {
@@ -39,26 +40,23 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Right: Currency Toggle + Date Picker Pill + Profile */}
+        {/* Right: Kiosk Link + Currency Toggle + Date Picker Pill + Profile */}
         <div className="flex items-center space-x-3 sm:space-x-4">
-          {/* Currency Switcher (SAR / OMR) */}
-          <div className="hidden sm:flex items-center bg-white border border-surface-border rounded-xl p-0.5 shadow-xs text-xs font-medium">
-            <button
-              onClick={() => { setCurrency('SAR'); addToast('Display currency set to Saudi Riyal (SAR).'); }}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                currency === 'SAR' ? 'bg-[#1684AA] text-white shadow-xs' : 'text-slate-secondary hover:text-slate-primary'
-              }`}
-            >
-              SAR
-            </button>
-            <button
-              onClick={() => { setCurrency('OMR'); addToast('Display currency set to Omani Rial (OMR).'); }}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                currency === 'OMR' ? 'bg-[#009B4D] text-white shadow-xs' : 'text-slate-secondary hover:text-slate-primary'
-              }`}
-            >
-              OMR
-            </button>
+          {/* Quick Access to Entry Panel */}
+          <Link
+            to="/entry"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-brand-green hover:bg-brand-green-hover text-white text-xs font-semibold shadow-pill transition-all hover:scale-[1.02]"
+            title="Open Entry Panel"
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Entry Panel</span>
+            <span className="sm:hidden">Entry</span>
+          </Link>
+          {/* Currency Display (OMR Only) */}
+          <div className="hidden sm:flex items-center space-x-1.5 bg-white border border-surface-border rounded-xl px-3 py-1.5 shadow-xs text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-[#009B4D]" />
+            <span className="text-[#009B4D] font-bold">OMR</span>
+            <span className="text-slate-400 font-normal">Omani Rial</span>
           </div>
 
           {/* Date Selector Pill */}

@@ -9,7 +9,9 @@ import {
   CalendarDays, 
   Settings, 
   LogOut,
-  X
+  X,
+  UserCheck,
+  Users
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import logoAsset from '../../assets/logo.jpg';
@@ -21,6 +23,8 @@ export default function Sidebar() {
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: Home },
+    { name: 'Employees', path: '/employees', icon: Users },
+    { name: 'Entry Panel', path: '/entry', icon: UserCheck },
     { name: 'Wastage Control', path: '/wastage', icon: PieChart },
     { name: 'Finance', path: '/finance', icon: Wallet },
     { name: 'Meal Allocation', path: '/allocation', icon: CalendarCheck },
@@ -89,14 +93,21 @@ export default function Sidebar() {
                   key={item.name}
                   to={item.path}
                   onClick={closeMobile}
-                  className={`flex items-center space-x-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                     isActive 
                       ? 'bg-[#009B4D] text-white shadow-pill font-semibold' 
                       : 'text-slate-300 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  <span className="tracking-wide">{item.name}</span>
+                  <div className="flex items-center space-x-3.5">
+                    <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <span className="tracking-wide">{item.name}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-md bg-emerald-400 text-slate-900 ml-2">
+                      {item.badge}
+                    </span>
+                  )}
                 </NavLink>
               );
             })}

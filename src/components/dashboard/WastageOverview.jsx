@@ -9,10 +9,15 @@ export default function WastageOverview() {
   const { wastageOverview } = data;
   const navigate = useNavigate();
 
-  const chartData = [
-    { name: 'Consumed', value: wastageOverview.consumedMeals, color: '#009B4D' },
-    { name: 'Wasted', value: wastageOverview.wastedMeals, color: '#E2E8F0' },
-  ];
+  const hasData = wastageOverview.consumedMeals > 0 || wastageOverview.wastedMeals > 0;
+  const chartData = hasData
+    ? [
+        { name: 'Consumed', value: wastageOverview.consumedMeals, color: '#009B4D' },
+        { name: 'Wasted', value: Math.max(0, wastageOverview.wastedMeals), color: '#E2E8F0' },
+      ]
+    : [
+        { name: 'Awaiting Entries', value: 1, color: '#E2E8F0' },
+      ];
 
   return (
     <div className="bg-white rounded-2xl p-5 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow flex flex-col justify-between">
@@ -96,9 +101,16 @@ export default function WastageOverview() {
       </div>
 
       {/* Actionable insight badge */}
-      <div className="mt-4 bg-[#E5F5EC] border border-[#009B4D]/20 rounded-xl px-3.5 py-2.5 flex items-center space-x-2.5 text-xs text-slate-primary">
-        <Sprout className="w-4 h-4 text-brand-green flex-shrink-0" />
-        <span className="font-normal text-[12px]">{wastageOverview.insight}</span>
+      <div className="mt-4 bg-[#E5F5EC] border border-[#009B4D]/30 rounded-xl px-3.5 py-2.5 flex items-start space-x-2.5 text-xs text-slate-800">
+        <Sprout className="w-4 h-4 text-brand-green flex-shrink-0 mt-0.5" />
+        <div className="space-y-0.5">
+          <span className="font-bold text-brand-green block text-[11px] uppercase tracking-wide">
+            2-Week Consistency & +5% Buffer Optimization
+          </span>
+          <span className="font-medium text-[12px] text-slate-700 leading-snug block">
+            With consistent 80%–85% 2-week attendance across 100 staff, kitchen prep target is locked at 85 portions (+5% buffer), saving 45 meals/day in OMR.
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -80,7 +80,7 @@ export default function AllocationOverview() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 text-xs">
-            {mealAllocation.categories.slice(0, 2).map((item) => (
+            {mealAllocation.categories.map((item) => (
               <tr key={item.category} className="hover:bg-slate-50/60 transition-colors">
                 <td className="py-2.5 flex items-center space-x-2">
                   <span
@@ -91,7 +91,7 @@ export default function AllocationOverview() {
                 </td>
                 <td className="py-2.5 text-slate-secondary">{item.dailyAllocation}</td>
                 <td className="py-2.5 text-right font-semibold text-slate-primary">
-                  {item.remainingMonth}
+                  {item.remainingCredits ? `${item.remainingCredits.toLocaleString()} Credits` : item.remainingMonth}
                 </td>
               </tr>
             ))}

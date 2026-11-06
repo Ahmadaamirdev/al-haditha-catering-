@@ -27,7 +27,7 @@ export default function TimetableMeals() {
   // Form state for editing or adding
   const [formMeal, setFormMeal] = useState({
     mealTime: 'Lunch',
-    timeSlot: '12:00 - 15:00',
+    timeSlot: '14:00 - 15:00',
     assignedMenu: '',
     applicableTo: 'Junior, Senior',
     chefInCharge: '',

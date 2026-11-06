@@ -71,30 +71,12 @@ export default function Settings() {
             <h3 className="font-semibold text-base text-slate-primary">Currency & Accounting Standard</h3>
           </div>
 
-          <div className="text-xs space-y-3">
+          <div className="text-xs space-y-2">
             <label className="block font-semibold text-slate-primary">Default Operational Currency</label>
-            <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="currency"
-                  checked={currency === 'SAR'}
-                  onChange={() => setCurrency('SAR')}
-                  className="text-brand-green focus:ring-brand-green"
-                />
-                <span className="font-medium text-slate-primary">Saudi Riyal (SAR) — Matches Dashboard Reference</span>
-              </label>
-
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="currency"
-                  checked={currency === 'OMR'}
-                  onChange={() => setCurrency('OMR')}
-                  className="text-brand-green focus:ring-brand-green"
-                />
-                <span className="font-medium text-slate-primary">Omani Rial (OMR) — Standard Prompt Scope</span>
-              </label>
+            <div className="flex items-center space-x-2 p-3 bg-slate-50 border border-surface-border rounded-xl">
+              <span className="w-2.5 h-2.5 rounded-full bg-brand-green" />
+              <span className="font-bold text-slate-primary">Omani Rial (OMR)</span>
+              <span className="text-slate-500">— Standardized ERP currency across all accounting and budgeting modules.</span>
             </div>
           </div>
         </div>

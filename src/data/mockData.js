@@ -1,73 +1,69 @@
 // Mock Data for Al Haditha Energy Meal Management System
+import { alHadithaEmployees } from './employeesData';
 
 export const initialMockData = {
-  currency: 'SAR', // Can switch between SAR and OMR
+  currency: 'OMR', // ERP currency strictly set to OMR (Omani Rial)
   selectedMonth: 'November 2025',
   currentDateFormatted: 'Monday, 3 Nov 2025',
 
-  // Employee Meal Overview
+  // 100 Employees Master Feed (40 Junior, 40 Senior, 20 VIP)
+  employees: alHadithaEmployees,
+
+  // Employee Meal Overview (100 Employees: 40 Junior, 40 Senior, 20 VIP) - Starting at 0 for live testing
   employeeOverview: {
     junior: {
       category: 'Junior',
-      total: 1240,
-      eating: 1120,
-      percentage: 90,
+      total: 40,
+      eating: 0,
+      percentage: 0,
       color: '#009B4D',
       bgColor: '#E5F5EC',
     },
     senior: {
       category: 'Senior',
-      total: 680,
-      eating: 620,
-      percentage: 91,
+      total: 40,
+      eating: 0,
+      percentage: 0,
       color: '#1684AA',
       bgColor: '#E7F2F9',
     },
     vip: {
       category: 'VIP',
-      total: 120,
-      eating: 98,
-      percentage: 82,
+      total: 20,
+      eating: 0,
+      percentage: 0,
       color: '#009B4D',
       bgColor: '#E5F5EC',
     },
   },
 
-  // Wastage Control Overview
+  // Wastage Control Overview - Starting at 0 for live testing
   wastageOverview: {
-    consumedMeals: 2200,
-    wastedMeals: 300,
-    totalAllocated: 2500,
-    consumptionPercentage: 88,
-    estimatedWastageKg: 75.5,
-    estimatedWastageCost: 1500,
-    insight: 'Consider reducing food for next meal.',
+    consumedMeals: 0,
+    wastedMeals: 0,
+    totalAllocated: 300,
+    consumptionPercentage: 0,
+    estimatedWastageKg: 0,
+    estimatedWastageCost: 0,
+    insight: 'No meals logged yet today. Waiting for check-ins from the Entry Kiosk.',
     trend: [
-      { day: 'Mon', consumed: 2200, wasted: 300, rate: 88 },
-      { day: 'Tue', consumed: 2150, wasted: 350, rate: 86 },
-      { day: 'Wed', consumed: 2280, wasted: 220, rate: 91 },
-      { day: 'Thu', consumed: 2300, wasted: 200, rate: 92 },
-      { day: 'Fri', consumed: 950, wasted: 80, rate: 92 }, // Off day partial
-      { day: 'Sat', consumed: 900, wasted: 90, rate: 91 },
-      { day: 'Sun', consumed: 2180, wasted: 320, rate: 87 },
+      { day: 'Mon', consumed: 0, wasted: 0, rate: 0 },
+      { day: 'Tue', consumed: 0, wasted: 0, rate: 0 },
+      { day: 'Wed', consumed: 0, wasted: 0, rate: 0 },
+      { day: 'Thu', consumed: 0, wasted: 0, rate: 0 },
+      { day: 'Fri', consumed: 0, wasted: 0, rate: 0 },
+      { day: 'Sat', consumed: 0, wasted: 0, rate: 0 },
+      { day: 'Sun', consumed: 0, wasted: 0, rate: 0 },
     ],
     mealBreakdown: [
-      { meal: 'Breakfast', allocated: 800, consumed: 720, wasted: 80, rate: 90 },
-      { meal: 'Lunch', allocated: 1100, consumed: 960, wasted: 140, rate: 87 },
-      { meal: 'Dinner', allocated: 600, consumed: 520, wasted: 80, rate: 86 },
+      { meal: 'Breakfast', allocated: 100, consumed: 0, wasted: 0, rate: 0 },
+      { meal: 'Lunch', allocated: 100, consumed: 0, wasted: 0, rate: 0 },
+      { meal: 'Dinner', allocated: 100, consumed: 0, wasted: 0, rate: 0 },
     ],
-    records: [
-      { id: 'WST-001', date: '2025-11-03', meal: 'Breakfast', category: 'Junior', allocated: 450, consumed: 410, wasted: 40, status: 'Normal' },
-      { id: 'WST-002', date: '2025-11-03', meal: 'Lunch', category: 'Junior', allocated: 550, consumed: 480, wasted: 70, status: 'High Waste' },
-      { id: 'WST-003', date: '2025-11-03', meal: 'Lunch', category: 'Senior', allocated: 300, consumed: 275, wasted: 25, status: 'Optimal' },
-      { id: 'WST-004', date: '2025-11-03', meal: 'Lunch', category: 'VIP', allocated: 50, consumed: 45, wasted: 5, status: 'Optimal' },
-      { id: 'WST-005', date: '2025-11-03', meal: 'Dinner', category: 'Junior', allocated: 400, consumed: 345, wasted: 55, status: 'Review' },
-      { id: 'WST-006', date: '2025-11-02', meal: 'Lunch', category: 'Junior', allocated: 550, consumed: 502, wasted: 48, status: 'Normal' },
-      { id: 'WST-007', date: '2025-11-02', meal: 'Lunch', category: 'Senior', allocated: 300, consumed: 280, wasted: 20, status: 'Optimal' },
-    ]
+    records: []
   },
 
-  // Finance Overview
+  // Finance Overview - Starting at 0 for live testing
   financeOverview: {
     categoryRates: {
       junior: { rate: 5, unit: 'Person', name: 'Junior Budget' },
@@ -75,45 +71,48 @@ export const initialMockData = {
       vip: { rate: 20, unit: 'Person', name: 'VIP Budget' },
     },
     budgetVsActual: [
-      { category: 'Junior', budget: 2300, actual: 2050 },
-      { category: 'Senior', budget: 1650, actual: 1450 },
-      { category: 'VIP', budget: 850, actual: 680 },
+      { category: 'Junior', budget: 2300, actual: 0 },
+      { category: 'Senior', budget: 1650, actual: 0 },
+      { category: 'VIP', budget: 850, actual: 0 },
     ],
     budgetStatus: [
-      { category: 'Junior', remaining: 4200, status: 'Left' },
-      { category: 'Senior', remaining: 5950, status: 'Left' },
-      { category: 'VIP', remaining: 1000, status: 'Left' },
+      { category: 'Junior', remaining: 2300, status: 'Left' },
+      { category: 'Senior', remaining: 1650, status: 'Left' },
+      { category: 'VIP', remaining: 850, status: 'Left' },
     ],
     monthlyTotalBudget: 65000,
-    monthlyExpenditure: 53850,
-    monthlyRemaining: 11150,
-    utilizationRate: 82.8,
+    monthlyExpenditure: 0,
+    monthlyRemaining: 65000,
+    utilizationRate: 0,
     monthlyHistory: [
       { month: 'Jul', budget: 62000, actual: 58000 },
       { month: 'Aug', budget: 62000, actual: 59400 },
       { month: 'Sep', budget: 65000, actual: 61200 },
       { month: 'Oct', budget: 65000, actual: 57800 },
-      { month: 'Nov', budget: 65000, actual: 53850 },
+      { month: 'Nov', budget: 65000, actual: 0 },
     ]
   },
 
-  // Meal Allocation Overview
+  // Meal Allocation Overview (100 Employees: 40 Jr, 40 Sr, 20 VIP) - Starting at 0 consumed
   mealAllocation: {
     workingDays: 22,
     offDaysNote: 'Fri & Sat Off',
     mealsPerPersonDay: 3,
     categories: [
-      { category: 'Junior', color: '#009B4D', dailyAllocation: '3 Meals / Day', remainingMonth: '66 Meals', totalEmployees: 1240, monthlyCredits: 81840, consumedCredits: 12320, remainingCredits: 69520 },
-      { category: 'Senior', color: '#1684AA', dailyAllocation: '3 Meals / Day', remainingMonth: '66 Meals', totalEmployees: 680, monthlyCredits: 44880, consumedCredits: 6820, remainingCredits: 38060 },
-      { category: 'VIP', color: '#009B4D', dailyAllocation: 'Event-based / On Demand', remainingMonth: 'Flexible', totalEmployees: 120, monthlyCredits: 2640, consumedCredits: 420, remainingCredits: 2220 },
+      { category: 'Junior', color: '#009B4D', dailyAllocation: '3 Meals / Day', remainingMonth: '66 Meals', totalEmployees: 40, monthlyCredits: 2640, consumedCredits: 0, remainingCredits: 2640 },
+      { category: 'Senior', color: '#1684AA', dailyAllocation: '3 Meals / Day', remainingMonth: '66 Meals', totalEmployees: 40, monthlyCredits: 2640, consumedCredits: 0, remainingCredits: 2640 },
+      { category: 'VIP', color: '#009B4D', dailyAllocation: 'Event-based / On Demand', remainingMonth: 'Flexible', totalEmployees: 20, monthlyCredits: 1320, consumedCredits: 0, remainingCredits: 1320 },
     ]
   },
+
+  // Real-time Meal Attendance Entries Feed - Starts EMPTY (0) so user can test cleanly
+  mealEntries: [],
 
   // Timetable & Meals Overview
   timetable: [
     {
       id: 'tb-1',
-      timeSlot: '06:30 - 09:00',
+      timeSlot: '09:00 - 10:00',
       mealTime: 'Breakfast',
       assignedMenu: 'Continental Breakfast',
       applicableTo: 'Junior, Senior',
@@ -123,7 +122,7 @@ export const initialMockData = {
     },
     {
       id: 'tb-2',
-      timeSlot: '12:00 - 15:00',
+      timeSlot: '14:00 - 15:00',
       mealTime: 'Lunch',
       assignedMenu: 'Arabic Meal',
       applicableTo: 'Junior, Senior, VIP',
@@ -133,7 +132,7 @@ export const initialMockData = {
     },
     {
       id: 'tb-3',
-      timeSlot: '18:30 - 21:30',
+      timeSlot: '19:00 - 20:00',
       mealTime: 'Dinner',
       assignedMenu: 'Light Dinner',
       applicableTo: 'Junior, Senior',
