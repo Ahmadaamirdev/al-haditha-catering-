@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialMockData } from '../data/mockData';
 import { alHadithaEmployees, matchEmployeeByIdAndName } from '../data/employeesData';
-import { getEmployeeRealtimeAllocations, calculateMonthCalendar, MEAL_WINDOWS } from '../utils/allocationEngine';
+import { getEmployeeRealtimeAllocations, calculateMonthCalendar, MEAL_WINDOWS, isEntryInMonthOrDate } from '../utils/allocationEngine';
 import { computeCategoryFinance } from '../utils/financeEngine';
 
 const AppContext = createContext(null);
@@ -15,6 +15,10 @@ export function AppProvider({ children }) {
         const parsed = JSON.parse(saved);
         if (!parsed.employees || parsed.employees.length !== 100) {
           parsed.employees = alHadithaEmployees;
+        }
+        // Initialize events as empty if mock events were previously present (for user clean test)
+        if (!parsed.events || parsed.events.some((e) => e.id === 'EVT-101' || e.id === 'EVT-102' || e.id === 'EVT-103')) {
+          parsed.events = [];
         }
         // Harmonize finance data with real meal entries
         const fin = computeCategoryFinance({
@@ -125,17 +129,24 @@ export function AppProvider({ children }) {
   // Events updates
   const addEvent = (newEvent) => {
     const id = `EVT-${Date.now().toString().slice(-4)}`;
+    const headcount = Number(newEvent.expectedCount ?? newEvent.invitedCount ?? 1);
+    const rate = Number(newEvent.perPersonBudget ?? 0);
+    const calculatedBudget = newEvent.overallBudget ? Number(newEvent.overallBudget) : (headcount * rate);
+
     const eventObj = {
       id,
       ...newEvent,
-      perPersonBudget: Number(newEvent.perPersonBudget),
-      overallBudget: Number(newEvent.expectedCount) * Number(newEvent.perPersonBudget),
-      status: 'Confirmed',
-      statusType: 'success',
+      expectedCount: headcount,
+      invitedCount: Number(newEvent.invitedCount ?? headcount),
+      perPersonBudget: rate,
+      overallBudget: calculatedBudget,
+      status: newEvent.status || 'Confirmed',
+      statusType: newEvent.statusType || 'success',
+      invitedEmployees: newEvent.invitedEmployees || [],
     };
     setData((prev) => ({
       ...prev,
-      events: [eventObj, ...prev.events],
+      events: [eventObj, ...(prev.events || [])],
     }));
     addToast(`Event "${newEvent.title}" scheduled successfully.`);
   };
@@ -143,13 +154,13 @@ export function AppProvider({ children }) {
   const updateEvent = (eventId, updatedFields) => {
     setData((prev) => ({
       ...prev,
-      events: prev.events.map((evt) =>
+      events: (prev.events || []).map((evt) =>
         evt.id === eventId
           ? {
               ...evt,
               ...updatedFields,
-              overallBudget: Number(updatedFields.expectedCount || evt.expectedCount) *
-                Number(updatedFields.perPersonBudget || evt.perPersonBudget),
+              overallBudget: Number(updatedFields.expectedCount ?? evt.expectedCount) *
+                Number(updatedFields.perPersonBudget ?? evt.perPersonBudget),
             }
           : evt
       ),
@@ -160,7 +171,7 @@ export function AppProvider({ children }) {
   const deleteEvent = (eventId) => {
     setData((prev) => ({
       ...prev,
-      events: prev.events.filter((evt) => evt.id !== eventId),
+      events: (prev.events || []).filter((evt) => evt.id !== eventId),
     }));
     addToast('Event removed.', 'info');
   };
@@ -176,37 +187,56 @@ export function AppProvider({ children }) {
     addToast(`Updated schedule for ${updatedMeal.mealTime || 'meal'}.`);
   };
 
-  // Allocation updates
-  const generateMonthlyAllocation = (month, days) => {
+  // Allocation updates with dynamic filtering by selected month & year
+  const generateMonthlyAllocation = (month, days, silent = false) => {
     const workingDays = Number(days) || 22;
-    setData((prev) => ({
-      ...prev,
-      selectedMonth: month,
-      mealAllocation: {
-        ...prev.mealAllocation,
-        workingDays,
-        categories: prev.mealAllocation.categories.map((c) => {
-          if (c.category === 'Junior') {
-            const monthlyCredits = c.totalEmployees * workingDays * 3;
-            return {
-              ...c,
-              monthlyCredits,
-              remainingCredits: monthlyCredits - c.consumedCredits,
-            };
-          }
-          if (c.category === 'Senior') {
-            const monthlyCredits = c.totalEmployees * workingDays * 3;
-            return {
-              ...c,
-              monthlyCredits,
-              remainingCredits: monthlyCredits - c.consumedCredits,
-            };
-          }
-          return c;
-        }),
-      },
-    }));
-    addToast(`Monthly meal allocation generated for ${month} (${workingDays} working days).`);
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const parts = String(month).split(' ');
+    const mName = parts[0];
+    const yr = parseInt(parts[1], 10) || 2026;
+    const mIdx = monthNames.indexOf(mName) >= 0 ? monthNames.indexOf(mName) : 10;
+
+    setData((prev) => {
+      // Filter meal entries specifically for this target month and year
+      const monthEntries = (prev.mealEntries || []).filter((entry) =>
+        isEntryInMonthOrDate(entry, yr, mIdx)
+      );
+
+      const updatedCategories = (prev.mealAllocation?.categories || []).map((c) => {
+        const totalEmp = c.totalEmployees || (c.category === 'VIP' ? 20 : 40);
+        const monthlyCredits = totalEmp * workingDays * 3;
+
+        // Calculate consumed credits specifically from filtered monthEntries
+        const catConsumed = monthEntries.filter((entry) => {
+          const entryCat = (entry.category || prev.employees?.find((e) => e.id === entry.employeeId)?.category || '').toLowerCase();
+          return entryCat === c.category.toLowerCase();
+        }).length;
+
+        return {
+          ...c,
+          monthlyCredits,
+          consumedCredits: catConsumed,
+          remainingCredits: Math.max(0, monthlyCredits - catConsumed),
+        };
+      });
+
+      return {
+        ...prev,
+        selectedMonth: month,
+        mealAllocation: {
+          ...prev.mealAllocation,
+          workingDays,
+          categories: updatedCategories,
+        },
+      };
+    });
+
+    if (!silent) {
+      addToast(`Allocations synced for ${month} (${workingDays} working days).`);
+    }
   };
 
   // Log waste adjustment

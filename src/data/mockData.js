@@ -142,66 +142,8 @@ export const initialMockData = {
     }
   ],
 
-  // Events Overview
-  events: [
-    {
-      id: 'EVT-101',
-      title: 'Annual Gathering',
-      day: '15',
-      month: 'Nov',
-      fullDate: '2025-11-15',
-      time: '18:30 - 22:30',
-      invitedCount: 200,
-      expectedCount: 180,
-      perPersonBudget: 20,
-      overallBudget: 4000,
-      status: 'No Change',
-      statusType: 'success',
-      description: 'Company annual event with special menu.',
-      menuChanged: false,
-      menuDetails: 'Special VIP Buffet: Lamb Ouzi, Kingfish Steaks, Seafood Saffron Rice, Royal Salad Bar, Premium Arabic Sweets and Mocktails.',
-      location: 'Al Haditha Central Hall & Courtyard',
-      category: 'VIP, Senior, Junior Honorees'
-    },
-    {
-      id: 'EVT-102',
-      title: 'Q4 Safety Excellence Celebration',
-      day: '22',
-      month: 'Nov',
-      fullDate: '2025-11-22',
-      time: '12:30 - 14:30',
-      invitedCount: 350,
-      expectedCount: 320,
-      perPersonBudget: 15,
-      overallBudget: 5250,
-      status: 'Menu Updated',
-      statusType: 'warning',
-      description: 'Honoring zero lost-time injury milestone across solar and desert field camps.',
-      menuChanged: true,
-      menuDetails: 'BBQ Special: Mixed Grill skewers, Biryani, Caesar Salad, Traditional Halwa and Kahwa.',
-      location: 'Camp Recreation Dining Center',
-      category: 'All Staff'
-    },
-    {
-      id: 'EVT-103',
-      title: 'Board of Directors Luncheon',
-      day: '28',
-      month: 'Nov',
-      fullDate: '2025-11-28',
-      time: '13:00 - 15:00',
-      invitedCount: 25,
-      expectedCount: 25,
-      perPersonBudget: 35,
-      overallBudget: 875,
-      status: 'Confirmed',
-      statusType: 'success',
-      description: 'Executive Board dining with executive culinary service.',
-      menuChanged: true,
-      menuDetails: 'Executive 5-Course Plated Service: Lobster Bisque, Wagyu Tenderloin / Seared Sea Bass, Date Pudding with Cardamom Gelato.',
-      location: 'Executive VIP Dining Suite',
-      category: 'VIP'
-    }
-  ],
+  // Events Overview - Starts empty for live testing
+  events: [],
 
   // Mess Facilities
   facilities: [

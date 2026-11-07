@@ -33,7 +33,8 @@ import Modal from '../components/common/Modal';
 
 export default function Finance() {
   const { data, currency, updateCategoryBudget, addExtraBudget, addToast } = useApp();
-  const { financeOverview, events } = data;
+  const { financeOverview } = data;
+  const events = data.events || [];
   const mealEntries = data.mealEntries || [];
 
   // Compute live synchronized finance metrics directly from real meal entries
@@ -399,21 +400,37 @@ export default function Finance() {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
-              {events.map((evt) => (
-                <tr key={evt.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-3.5 font-semibold text-slate-primary">{evt.title}</td>
-                  <td className="px-6 py-3.5 text-slate-secondary">{evt.fullDate || `${evt.day} ${evt.month} 2025`}</td>
-                  <td className="px-6 py-3.5 text-slate-secondary">{evt.category || 'VIP'}</td>
-                  <td className="px-6 py-3.5 text-right font-medium text-slate-primary">{evt.expectedCount}</td>
-                  <td className="px-6 py-3.5 text-right font-medium text-slate-secondary">{evt.perPersonBudget} {currency}</td>
-                  <td className="px-6 py-3.5 text-right font-bold text-slate-primary">{evt.overallBudget.toLocaleString()} {currency}</td>
-                  <td className="px-6 py-3.5 text-center">
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-brand-green-light text-brand-green">
-                      {evt.status}
-                    </span>
+              {events.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                        <Calendar className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-semibold text-slate-700">No Special Event Expenditures</p>
+                      <p className="text-[11px] text-slate-400 max-w-sm">
+                        No events recorded yet. Go to the Events module to create an event, select invited personnel, and calculate catering expenditures.
+                      </p>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                events.map((evt) => (
+                  <tr key={evt.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-3.5 font-semibold text-slate-primary">{evt.title}</td>
+                    <td className="px-6 py-3.5 text-slate-secondary">{evt.fullDate || `${evt.day} ${evt.month} 2025`}</td>
+                    <td className="px-6 py-3.5 text-slate-secondary">{evt.category || 'VIP'}</td>
+                    <td className="px-6 py-3.5 text-right font-medium text-slate-primary">{evt.expectedCount || evt.invitedCount || 0}</td>
+                    <td className="px-6 py-3.5 text-right font-medium text-slate-secondary">{evt.perPersonBudget} {currency}</td>
+                    <td className="px-6 py-3.5 text-right font-bold text-slate-primary">{(evt.overallBudget || 0).toLocaleString()} {currency}</td>
+                    <td className="px-6 py-3.5 text-center">
+                      <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-brand-green-light text-brand-green">
+                        {evt.status || 'Confirmed'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

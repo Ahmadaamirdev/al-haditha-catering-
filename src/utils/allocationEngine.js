@@ -47,6 +47,80 @@ export const MEAL_WINDOWS = [
 ];
 
 /**
+ * Checks if a meal entry matches a given year, monthIndex (0-11), and optional dayNumber (1-31)
+ */
+export function isEntryInMonthOrDate(entry, targetYear, targetMonthIndex, targetDay = null) {
+  if (!entry) return false;
+
+  const monthNames = [
+    'january', 'february', 'march', 'april', 'may', 'june',
+    'july', 'august', 'september', 'october', 'november', 'december'
+  ];
+  const shortMonths = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+  // 1. Check entry.date
+  if (entry.date) {
+    const str = String(entry.date).trim();
+
+    // Check YYYY-MM-DD or YYYY-M-D
+    const ymdMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (ymdMatch) {
+      const y = parseInt(ymdMatch[1], 10);
+      const m = parseInt(ymdMatch[2], 10) - 1;
+      const d = parseInt(ymdMatch[3], 10);
+      if (y === targetYear && m === targetMonthIndex) {
+        if (targetDay !== null && targetDay !== undefined) {
+          return d === Number(targetDay);
+        }
+        return true;
+      }
+      return false;
+    }
+
+    // Check standard JS Date parsing
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+      if (parsed.getFullYear() === targetYear && parsed.getMonth() === targetMonthIndex) {
+        if (targetDay !== null && targetDay !== undefined) {
+          return parsed.getDate() === Number(targetDay);
+        }
+        return true;
+      }
+      return false;
+    }
+
+    // Substring fallback (e.g. "Monday, 3 Nov 2025" or "3 Nov 2026")
+    const lower = str.toLowerCase();
+    const hasYear = lower.includes(String(targetYear));
+    const hasMonth = lower.includes(monthNames[targetMonthIndex]) || lower.includes(shortMonths[targetMonthIndex]);
+    if (hasYear && hasMonth) {
+      if (targetDay !== null && targetDay !== undefined) {
+        const dayMatch = str.match(/\b\d{1,2}\b/);
+        if (dayMatch) {
+          return parseInt(dayMatch[0], 10) === Number(targetDay);
+        }
+      }
+      return true;
+    }
+  }
+
+  // 2. Check entry.timestamp if entry.date wasn't matched
+  if (entry.timestamp) {
+    const parsed = new Date(entry.timestamp);
+    if (!isNaN(parsed.getTime())) {
+      if (parsed.getFullYear() === targetYear && parsed.getMonth() === targetMonthIndex) {
+        if (targetDay !== null && targetDay !== undefined) {
+          return parsed.getDate() === Number(targetDay);
+        }
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Calculates month statistics: total days, Friday & Saturday count, working days, and monthly credits per employee.
  */
 export function calculateMonthCalendar(year, monthIndex) {

@@ -1,98 +1,175 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   CalendarCheck, 
   Calendar, 
   Utensils, 
   RefreshCw, 
   Sliders, 
-  CheckCircle, 
-  Info, 
-  Search, 
-  Layers, 
   ChevronRight, 
+  ChevronLeft,
+  Layers, 
   ShieldCheck, 
-  AlertCircle,
-  User,
-  CheckCircle2,
-  Eye,
-  Sparkles,
-  Clock,
-  ArrowDown
+  CheckCircle2, 
+  Clock, 
+  Users,
+  Check,
+  X
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Modal from '../components/common/Modal';
-import { calculateMonthCalendar, MEAL_WINDOWS, getEmployeesAllocationMap } from '../utils/allocationEngine';
+import { calculateMonthCalendar, isEntryInMonthOrDate } from '../utils/allocationEngine';
 
 export default function MealAllocation() {
   const { data, generateMonthlyAllocation, addToast } = useApp();
   const { mealAllocation } = data;
 
-  const months = [
-    { label: 'November 2026', year: 2026, monthIndex: 10 },
-    { label: 'December 2026', year: 2026, monthIndex: 11 },
-    { label: 'January 2027', year: 2027, monthIndex: 0 },
-    { label: 'February 2027', year: 2027, monthIndex: 1 },
-    { label: 'March 2027', year: 2027, monthIndex: 2 },
+  // Month navigation: support 2025, 2026, 2027
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const [selectedMonth, setSelectedMonth] = useState('November 2026');
-  
+  const allMonths = useMemo(() => {
+    const list = [];
+    [2025, 2026, 2027].forEach((yr) => {
+      monthNames.forEach((mName, mIdx) => {
+        list.push({
+          label: `${mName} ${yr}`,
+          year: yr,
+          monthIndex: mIdx,
+          monthName: mName,
+        });
+      });
+    });
+    return list;
+  }, []);
+
+  // Initialize selected month from AppContext or default to November 2026
+  const [selectedMonth, setSelectedMonth] = useState(data.selectedMonth || 'November 2026');
+
+  // Find active month object
+  const activeMonthObj = useMemo(() => {
+    return allMonths.find((m) => m.label === selectedMonth) || {
+      label: 'November 2026',
+      year: 2026,
+      monthIndex: 10,
+      monthName: 'November',
+    };
+  }, [allMonths, selectedMonth]);
+
   // Dynamically calculate calendar statistics based on month day count & Friday/Saturday count
-  const activeMonthObj = months.find((m) => m.label === selectedMonth) || months[0];
-  const calendarStats = calculateMonthCalendar(activeMonthObj.year, activeMonthObj.monthIndex);
+  const calendarStats = useMemo(() => {
+    return calculateMonthCalendar(activeMonthObj.year, activeMonthObj.monthIndex);
+  }, [activeMonthObj]);
 
   const [workingDaysInput, setWorkingDaysInput] = useState(calendarStats.workingDaysCount);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCategoryDetail, setSelectedCategoryDetail] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Individual Employee Allocations table state
-  const [employeeSearch, setEmployeeSearch] = useState('');
-  const [employeeCategoryFilter, setEmployeeCategoryFilter] = useState('All');
-  const [selectedEmployeeDetail, setSelectedEmployeeDetail] = useState(null);
+  // Day filter state: null = entire month, number (1-31) = specific day
+  const [selectedDay, setSelectedDay] = useState(null);
 
-  // Real-time allocation map for all 100 employees
-  const employeeAllocationsMap = useMemo(() => {
-    return getEmployeesAllocationMap(
-      data.employees || [],
-      data.mealEntries || [],
-      new Date(),
-      activeMonthObj.year,
-      activeMonthObj.monthIndex
+  // Calendar Picker Popover State
+  const [isCalendarPickerOpen, setIsCalendarPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(activeMonthObj.year);
+  const calendarPickerRef = useRef(null);
+
+  // Filter meal entries specifically for this active month/year and optional day
+  const filteredMealEntries = useMemo(() => {
+    return (data.mealEntries || []).filter((entry) =>
+      isEntryInMonthOrDate(entry, activeMonthObj.year, activeMonthObj.monthIndex, selectedDay)
     );
-  }, [data.employees, data.mealEntries, activeMonthObj]);
+  }, [data.mealEntries, activeMonthObj.year, activeMonthObj.monthIndex, selectedDay]);
 
-  const filteredEmployeesList = useMemo(() => {
-    const list = data.employees || [];
-    return list.filter((emp) => {
-      const matchCat = employeeCategoryFilter === 'All' || emp.category === employeeCategoryFilter;
-      const q = employeeSearch.toLowerCase().trim();
-      const matchQuery = !q || emp.id.toLowerCase().includes(q) || emp.name.toLowerCase().includes(q) || (emp.department && emp.department.toLowerCase().includes(q));
-      return matchCat && matchQuery;
-    });
-  }, [data.employees, employeeCategoryFilter, employeeSearch]);
+  // Compute category metrics dynamically from filteredMealEntries
+  const getCategoryMetrics = (cat) => {
+    const totalEmp = cat.totalEmployees || (cat.category === 'VIP' ? 20 : 40);
+    const computedTotalCredits = totalEmp * calendarStats.workingDaysCount * 3;
+    const totalCredits = cat.monthlyCredits || computedTotalCredits;
 
-  const handleMonthChange = (e) => {
-    const m = e.target.value;
-    setSelectedMonth(m);
-    const found = months.find((x) => x.label === m);
-    if (found) {
-      const stats = calculateMonthCalendar(found.year, found.monthIndex);
+    // Filter consumed credits specifically for the active month/year/day
+    const consumed = filteredMealEntries.filter((entry) => {
+      const entryCat = (entry.category || data.employees?.find((e) => e.id === entry.employeeId)?.category || '').toLowerCase();
+      return entryCat === cat.category.toLowerCase();
+    }).length;
+
+    const remaining = Math.max(0, totalCredits - consumed);
+    const percentUsed = totalCredits ? Math.round((consumed / totalCredits) * 100) : 0;
+
+    return { totalCredits, consumed, remaining, percentUsed };
+  };
+
+  // Sync picker year when activeMonthObj changes
+  useEffect(() => {
+    setPickerYear(activeMonthObj.year);
+  }, [activeMonthObj.year]);
+
+  // Close calendar picker on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (calendarPickerRef.current && !calendarPickerRef.current.contains(event.target)) {
+        setIsCalendarPickerOpen(false);
+      }
+    };
+    if (isCalendarPickerOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCalendarPickerOpen]);
+
+  // Sync workingDaysInput whenever calendarStats changes
+  useEffect(() => {
+    setWorkingDaysInput(calendarStats.workingDaysCount);
+  }, [calendarStats.workingDaysCount]);
+
+  // Handle month change and immediately synchronize allocations in real time
+  const handleMonthChange = (monthLabel, isUserExplicit = true) => {
+    setSelectedMonth(monthLabel);
+    setSelectedDay(null); // Reset day filter on month change
+    const targetMonth = allMonths.find((m) => m.label === monthLabel);
+    if (targetMonth) {
+      const stats = calculateMonthCalendar(targetMonth.year, targetMonth.monthIndex);
       setWorkingDaysInput(stats.workingDaysCount);
+      // Automatically generate & sync allocations for the selected month
+      generateMonthlyAllocation(monthLabel, stats.workingDaysCount, !isUserExplicit);
+    }
+  };
+
+  const selectMonthFromPicker = (monthIndex, yr) => {
+    const targetLabel = `${monthNames[monthIndex]} ${yr}`;
+    handleMonthChange(targetLabel, true);
+    setIsCalendarPickerOpen(false);
+  };
+
+  const currentIndex = allMonths.findIndex((m) => m.label === selectedMonth);
+  const handlePrevMonth = () => {
+    if (currentIndex > 0) {
+      handleMonthChange(allMonths[currentIndex - 1].label, true);
+    }
+  };
+  const handleNextMonth = () => {
+    if (currentIndex < allMonths.length - 1) {
+      handleMonthChange(allMonths[currentIndex + 1].label, true);
     }
   };
 
   const handleGenerateSubmit = (e) => {
     e.preventDefault();
-    generateMonthlyAllocation(selectedMonth, workingDaysInput);
+    generateMonthlyAllocation(selectedMonth, workingDaysInput, false);
     setIsGenerateModalOpen(false);
   };
 
+  // Prepare calendar matrix with first day offset padding
+  const firstDayOfWeek = new Date(activeMonthObj.year, activeMonthObj.monthIndex, 1).getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
+  const leadingBlanks = Array.from({ length: firstDayOfWeek });
+
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-surface-border shadow-card">
+      {/* Top Banner with Clean Action Buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-surface-border shadow-card">
         <div>
           <div className="flex items-center space-x-2 text-brand-blue font-semibold text-xs uppercase tracking-wider">
             <CalendarCheck className="w-4 h-4" />
@@ -109,7 +186,7 @@ export default function MealAllocation() {
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setIsEditModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-surface-border bg-white hover:bg-slate-50 text-xs font-semibold text-slate-primary shadow-xs transition-colors"
+            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-surface-border bg-white hover:bg-slate-50 text-xs font-semibold text-slate-primary shadow-xs transition-colors cursor-pointer"
           >
             <Sliders className="w-4 h-4 text-slate-secondary" />
             <span>Edit Allocation Rules</span>
@@ -117,7 +194,7 @@ export default function MealAllocation() {
 
           <button
             onClick={() => setIsGenerateModalOpen(true)}
-            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-brand-green hover:bg-brand-green-hover text-white text-xs font-semibold shadow-pill transition-all"
+            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-brand-green hover:bg-brand-green-hover text-white text-xs font-semibold shadow-pill transition-all cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Generate Allocation</span>
@@ -125,43 +202,101 @@ export default function MealAllocation() {
         </div>
       </div>
 
-      {/* Rules Notice Box */}
-      <div className="bg-sky-50/70 border border-brand-blue/20 rounded-2xl p-4 sm:p-5 flex items-start space-x-3.5">
-        <div className="p-2 bg-brand-blue text-white rounded-xl flex-shrink-0 mt-0.5">
-          <Info className="w-4 h-4 text-white" />
-        </div>
-        <div className="text-xs text-slate-secondary space-y-1.5 flex-1">
-          <p className="font-semibold text-slate-primary text-sm">
-            Automated Shift Allocation & Real-Time Deduction Engine Policy
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-slate-700">
-            <div className="bg-white/80 p-2 rounded-xl border border-sky-100">
-              <span className="font-bold text-slate-900 block">1. Calendar Calculation:</span>
-              <span>Based on {calendarStats.totalDays} days in month. Fridays ({calendarStats.fridaysCount}) & Saturdays ({calendarStats.saturdaysCount}) are camp off-days (0 credits).</span>
-            </div>
-            <div className="bg-white/80 p-2 rounded-xl border border-sky-100">
-              <span className="font-bold text-slate-900 block">2. 3 Meal Windows / Day:</span>
-              <span>Breakfast (09:00 - 10:00), Lunch (14:00 - 15:00), Dinner (19:00 - 20:00) = {calendarStats.workingDaysCount} days × 3 = {calendarStats.allocationsPerEmployee} meals/staff.</span>
-            </div>
-            <div className="bg-white/80 p-2 rounded-xl border border-sky-100">
-              <span className="font-bold text-slate-900 block">3. Deduction & Expiration:</span>
-              <span>1 allocation deducted per meal checked in. If a time window passes without entry, 1 allocation expires automatically.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Working Days & Schedule Macro Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card">
+        {/* Selected Cycle Card with Interactive Calendar Picker */}
+        <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card flex flex-col justify-between relative">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-secondary">Selected Cycle</span>
-            <Calendar className="w-4 h-4 text-brand-blue" />
+
+            {/* Interactive Calendar Month Picker Widget */}
+            <div className="relative" ref={calendarPickerRef}>
+              <button
+                type="button"
+                onClick={() => setIsCalendarPickerOpen(!isCalendarPickerOpen)}
+                className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer shadow-xs ${
+                  isCalendarPickerOpen
+                    ? 'bg-brand-green text-white border-brand-green shadow-pill'
+                    : 'bg-sky-50 hover:bg-sky-100 text-brand-blue border-brand-blue/30'
+                }`}
+                title="Select month from calendar"
+              >
+                <Calendar className="w-4 h-4" />
+                <span className="text-xs font-bold">Pick Month</span>
+              </button>
+
+              {/* Calendar Month Picker Popover */}
+              {isCalendarPickerOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-border p-3.5 z-40 animate-fade-in">
+                  {/* Year Header with Prev/Next */}
+                  <div className="flex items-center justify-between pb-2.5 border-b border-surface-border mb-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setPickerYear((y) => Math.max(2024, y - 1))}
+                      className="p-1 rounded-lg text-slate-secondary hover:text-slate-primary hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Previous Year"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-bold text-slate-primary tracking-wide">
+                      {pickerYear}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPickerYear((y) => Math.min(2030, y + 1))}
+                      className="p-1 rounded-lg text-slate-secondary hover:text-slate-primary hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Next Year"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* 12 Months Calendar Grid */}
+                  <div className="grid grid-cols-3 gap-1.5 text-xs">
+                    {monthNames.map((name, idx) => {
+                      const isSelected = activeMonthObj.monthIndex === idx && activeMonthObj.year === pickerYear;
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => selectMonthFromPicker(idx, pickerYear)}
+                          className={`py-2 rounded-xl text-center font-semibold text-xs transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-brand-green text-white shadow-pill font-bold'
+                              : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                          }`}
+                        >
+                          {name.slice(0, 3)}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Quick Shortcut Row */}
+                  <div className="mt-2.5 pt-2 border-t border-surface-border flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Current: {calendarStats.monthName}</span>
+                    <button
+                      type="button"
+                      onClick={() => selectMonthFromPicker(10, 2026)}
+                      className="text-brand-blue font-bold hover:underline cursor-pointer"
+                    >
+                      Nov 2026
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <p className="text-xl font-bold text-slate-primary mt-2">{selectedMonth}</p>
-          <span className="text-[11px] text-brand-green font-medium">{calendarStats.totalDays} Days in Month</span>
+
+          <div className="mt-2">
+            <p className="text-xl font-bold text-slate-primary">{selectedMonth}</p>
+            <span className="text-[11px] text-brand-green font-semibold">
+              {calendarStats.totalDays} Days in Month
+            </span>
+          </div>
         </div>
 
+        {/* Working Days Card */}
         <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-secondary">Working Days</span>
@@ -170,9 +305,12 @@ export default function MealAllocation() {
             </span>
           </div>
           <p className="text-2xl font-bold text-slate-primary mt-1">{calendarStats.workingDaysCount} Days</p>
-          <span className="text-[11px] text-slate-muted">{calendarStats.fridaysCount} Fri + {calendarStats.saturdaysCount} Sat (0 Credits)</span>
+          <span className="text-[11px] text-slate-muted">
+            {calendarStats.fridaysCount} Fri + {calendarStats.saturdaysCount} Sat (0 Credits)
+          </span>
         </div>
 
+        {/* Daily Allowance Card */}
         <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-secondary">Daily Allowance</span>
@@ -182,6 +320,7 @@ export default function MealAllocation() {
           <span className="text-[11px] text-slate-muted">09:00-10:00 • 14:00-15:00 • 19:00-20:00</span>
         </div>
 
+        {/* Quota Per Staff Card */}
         <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-secondary">Quota Per Staff</span>
@@ -196,13 +335,174 @@ export default function MealAllocation() {
         </div>
       </div>
 
+      {/* Interactive Month Operational Calendar Breakdown */}
+      <div className="bg-white rounded-2xl border border-surface-border shadow-card p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-surface-border">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 rounded-xl bg-brand-green-light text-brand-green">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-base font-bold text-slate-primary">
+                  {calendarStats.monthName} {calendarStats.year} Operational Calendar & Camp Off-Days
+                </h2>
+                <div className="flex items-center space-x-1 ml-1 bg-slate-100 p-0.5 rounded-lg border border-surface-border">
+                  <button
+                    type="button"
+                    onClick={handlePrevMonth}
+                    disabled={currentIndex <= 0}
+                    className="p-1 rounded-md text-slate-secondary hover:text-slate-primary hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    title="Previous Month"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextMonth}
+                    disabled={currentIndex >= allMonths.length - 1}
+                    className="p-1 rounded-md text-slate-secondary hover:text-slate-primary hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    title="Next Month"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-slate-secondary mt-0.5">
+                Fridays & Saturdays automatically designated as Camp Off-Days (0 credits). Sunday through Thursday are active working days (3 meals/day).
+              </p>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center space-x-4 text-xs font-medium">
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3 h-3 rounded-md bg-emerald-50 border border-emerald-300 inline-block" />
+              <span className="text-slate-700">Working Day (3 Meals)</span>
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3 h-3 rounded-md bg-amber-50 border border-amber-300 inline-block" />
+              <span className="text-amber-800 font-semibold">Weekend Off (0 Credits)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-2">
+          {/* Day of week headers */}
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, idx) => (
+            <div
+              key={d}
+              className={`text-center py-2 text-xs font-bold uppercase tracking-wider rounded-xl ${
+                idx === 5 || idx === 6
+                  ? 'bg-amber-50/80 text-amber-800 border border-amber-200/60'
+                  : 'bg-slate-50 text-slate-600 border border-slate-100'
+              }`}
+            >
+              {d}
+            </div>
+          ))}
+
+          {/* Blank padding cells before 1st day of month */}
+          {leadingBlanks.map((_, i) => (
+            <div key={`blank-${i}`} className="min-h-14 rounded-xl bg-slate-50/30 border border-dashed border-slate-200/50" />
+          ))}
+
+          {/* Actual days of the month */}
+          {calendarStats.calendarDays.map((day) => {
+            const isSelected = selectedDay === day.dayNumber;
+            return (
+              <div
+                key={day.dayNumber}
+                onClick={() => setSelectedDay(isSelected ? null : day.dayNumber)}
+                className={`min-h-14 p-2 rounded-xl border transition-all flex flex-col justify-between cursor-pointer select-none ${
+                  isSelected
+                    ? 'ring-2 ring-brand-green border-brand-green bg-emerald-50/80 shadow-sm scale-[1.02]'
+                    : day.isOffDay
+                    ? 'bg-amber-50/50 border-amber-200 hover:border-amber-300'
+                    : 'bg-white border-surface-border hover:border-brand-green/40 hover:shadow-xs'
+                }`}
+                title={isSelected ? 'Click to clear filter and view full month' : `Click to filter allocations for Day ${day.dayNumber}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`text-xs font-bold ${
+                      isSelected
+                        ? 'text-brand-green font-black'
+                        : day.isOffDay
+                        ? 'text-amber-900 font-black'
+                        : 'text-slate-primary'
+                    }`}
+                  >
+                    {day.dayNumber}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {day.dayName}
+                  </span>
+                </div>
+
+                <div className="mt-1 text-center">
+                  {day.isOffDay ? (
+                    <span className="inline-block text-[10px] font-bold text-amber-800 bg-amber-100/90 border border-amber-200 px-1.5 py-0.5 rounded-md">
+                      OFF (0)
+                    </span>
+                  ) : (
+                    <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-md border ${
+                      isSelected ? 'bg-brand-green text-white border-brand-green' : 'text-emerald-800 bg-emerald-50 border-emerald-200'
+                    }`}>
+                      3 Meals
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Calendar Footer Summary Chips */}
+        <div className="pt-3 border-t border-surface-border flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-3 py-1 bg-slate-100 text-slate-700 font-semibold rounded-lg">
+              Total: {calendarStats.totalDays} Days
+            </span>
+            <span className="px-3 py-1 bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 rounded-lg">
+              Active: {calendarStats.workingDaysCount} Working Days
+            </span>
+            <span className="px-3 py-1 bg-amber-50 text-amber-800 font-bold border border-amber-200 rounded-lg">
+              Camp Off: {calendarStats.offDaysCount} Days ({calendarStats.fridaysCount} Fri + {calendarStats.saturdaysCount} Sat)
+            </span>
+            {selectedDay !== null && (
+              <span className="px-3 py-1 bg-brand-green text-white font-bold rounded-lg flex items-center space-x-1.5 shadow-xs">
+                <span>Filtered Date: {selectedDay} {calendarStats.monthName} {calendarStats.year}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedDay(null);
+                  }}
+                  className="hover:bg-white/20 p-0.5 rounded transition-colors cursor-pointer"
+                  title="View full month"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-1.5 text-slate-secondary">
+            <CheckCircle2 className="w-4 h-4 text-brand-green" />
+            <span className="font-medium">
+              Synchronized: {calendarStats.workingDaysCount} days × 3 meals = <strong className="text-slate-primary">{calendarStats.allocationsPerEmployee} credits / employee</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Category Quotas Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {mealAllocation.categories.map((cat) => {
-          const totalCredits = cat.monthlyCredits || 0;
-          const consumed = cat.consumedCredits || 0;
-          const remaining = cat.remainingCredits || (totalCredits - consumed);
-          const percentUsed = totalCredits ? Math.round((consumed / totalCredits) * 100) : 0;
+          // Dynamic calculation dynamically filtered by selected date, month, and year
+          const { totalCredits, consumed, remaining, percentUsed } = getCategoryMetrics(cat);
 
           return (
             <div 
@@ -234,8 +534,12 @@ export default function MealAllocation() {
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-slate-secondary">Credits Consumed:</span>
-                    <span className="font-medium text-brand-blue">{consumed.toLocaleString()}</span>
+                    <span className="text-slate-secondary">
+                      {selectedDay ? `Consumed on Day ${selectedDay}:` : 'Credits Consumed:'}
+                    </span>
+                    <span className={`font-bold ${consumed > 0 ? 'text-brand-blue' : 'text-slate-400'}`}>
+                      {consumed.toLocaleString()} {selectedDay ? 'Meals' : 'Credits'}
+                    </span>
                   </div>
 
                   <div className="flex justify-between">
@@ -261,8 +565,8 @@ export default function MealAllocation() {
 
               <div className="mt-6 pt-4 border-t border-surface-border flex justify-end">
                 <button
-                  onClick={() => setSelectedCategoryDetail(cat)}
-                  className="flex items-center space-x-1 text-xs font-semibold text-brand-blue hover:text-brand-blue-dark transition-colors"
+                  onClick={() => setSelectedCategoryDetail({ ...cat, monthlyCredits: totalCredits, remainingCredits: remaining })}
+                  className="flex items-center space-x-1 text-xs font-semibold text-brand-blue hover:text-brand-blue-dark transition-colors cursor-pointer"
                 >
                   <span>View Details</span>
                   <ChevronRight className="w-4 h-4" />
@@ -273,209 +577,34 @@ export default function MealAllocation() {
         })}
       </div>
 
-      {/* Detailed Allocation Quota Table */}
-      <div className="bg-white rounded-2xl border border-surface-border shadow-card overflow-hidden">
-        <div className="p-5 border-b border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-base font-semibold text-slate-primary">Shift-Wise Daily Distribution</h3>
-            <p className="text-xs text-slate-secondary">Allocation quotas per meal window for the active month</p>
+      {/* Camp Quota Synchronization Card */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-6 shadow-card flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-brand-green flex-shrink-0">
+            <Users className="w-6 h-6" />
           </div>
-
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-muted absolute left-3 top-2.5" />
-            <input
-              type="text"
-              placeholder="Filter shift or category..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-3.5 py-1.5 text-xs bg-slate-50 border border-surface-border rounded-xl focus:outline-none focus:border-brand-blue w-52"
-            />
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/70 border-b border-surface-border text-slate-secondary uppercase text-[10px] tracking-wider font-semibold">
-              <tr>
-                <th className="px-6 py-3">Category</th>
-                <th className="px-6 py-3">Eligible Staff</th>
-                <th className="px-6 py-3 text-right">Breakfast / Day</th>
-                <th className="px-6 py-3 text-right">Lunch / Day</th>
-                <th className="px-6 py-3 text-right">Dinner / Day</th>
-                <th className="px-6 py-3 text-right">Total Daily Quota</th>
-                <th className="px-6 py-3 text-right">Monthly Credits Total</th>
-                <th className="px-6 py-3 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-border">
-              {mealAllocation.categories.map((c) => (
-                <tr key={c.category} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-3.5 font-semibold text-slate-primary flex items-center space-x-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
-                    <span>{c.category} Employees</span>
-                  </td>
-                  <td className="px-6 py-3.5 text-slate-secondary">{c.totalEmployees.toLocaleString()}</td>
-                  <td className="px-6 py-3.5 text-right font-medium text-slate-primary">
-                    {c.category === 'VIP' ? 'Event only' : c.totalEmployees.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-3.5 text-right font-medium text-slate-primary">
-                    {c.category === 'VIP' ? 'Event only' : c.totalEmployees.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-3.5 text-right font-medium text-slate-primary">
-                    {c.category === 'VIP' ? 'Event only' : c.totalEmployees.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-3.5 text-right font-bold text-slate-primary">
-                    {c.category === 'VIP' ? 'Flexible' : (c.totalEmployees * 3).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-3.5 text-right font-bold text-brand-green">
-                    {c.monthlyCredits ? c.monthlyCredits.toLocaleString() : 'N/A'}
-                  </td>
-                  <td className="px-6 py-3.5 text-center">
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-brand-green-light text-brand-green">
-                      Active Quota
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Staff Individual Allocation Details (100 Employees) */}
-      <div className="bg-white rounded-2xl border border-surface-border shadow-card overflow-hidden">
-        <div className="p-5 border-b border-surface-border flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 text-brand-green" />
-              <h3 className="text-base font-bold text-slate-primary">
-                Individual Employee Allocations & Live Balances (100 Staff)
-              </h3>
-            </div>
-            <p className="text-xs text-slate-secondary mt-0.5">
-              Allocations are placed in each employee's details. Each entry minuses 1 allocation from the employee's balance in real time.
+            <h3 className="text-base font-bold text-white">
+              Total Camp Workforce Allocation: {selectedMonth}
+            </h3>
+            <p className="text-xs text-slate-300 mt-0.5">
+              100 Total Staff (40 Junior + 40 Senior + 20 VIP) • {calendarStats.workingDaysCount} active working days • 3 meals daily.
             </p>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Category tabs */}
-            <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl text-xs">
-              {['All', 'Junior', 'Senior', 'VIP'].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setEmployeeCategoryFilter(cat)}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                    employeeCategoryFilter === cat
-                      ? 'bg-white text-slate-primary shadow-xs font-bold'
-                      : 'text-slate-secondary hover:text-slate-primary'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-muted absolute left-3 top-2.5 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search staff ID or name..."
-                value={employeeSearch}
-                onChange={(e) => setEmployeeSearch(e.target.value)}
-                className="pl-9 pr-3.5 py-1.5 text-xs bg-slate-50 border border-surface-border rounded-xl focus:outline-none focus:border-brand-blue w-52"
-              />
-            </div>
-          </div>
         </div>
 
-        {/* Table of 100 Employees */}
-        <div className="overflow-x-auto max-h-[500px]">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/80 border-b border-surface-border text-slate-secondary uppercase text-[10px] tracking-wider font-semibold sticky top-0 z-10 backdrop-blur-xs">
-              <tr>
-                <th className="px-5 py-3">Employee ID</th>
-                <th className="px-5 py-3">Staff Name & Department</th>
-                <th className="px-5 py-3">Category</th>
-                <th className="px-5 py-3 text-center">Daily Allocation</th>
-                <th className="px-5 py-3 text-center">Monthly Quota</th>
-                <th className="px-5 py-3 text-center">Consumed Meals</th>
-                <th className="px-5 py-3 text-center">Missed / Expired</th>
-                <th className="px-5 py-3 text-center">Remaining Balance</th>
-                <th className="px-5 py-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-border">
-              {filteredEmployeesList.length === 0 ? (
-                <tr>
-                  <td colSpan="9" className="p-8 text-center text-slate-secondary">
-                    No employees matching filter "{employeeCategoryFilter}" or query "{employeeSearch}".
-                  </td>
-                </tr>
-              ) : (
-                filteredEmployeesList.map((emp) => {
-                  const alloc = employeeAllocationsMap[emp.id] || {
-                    totalMonthlyQuota: calendarStats.allocationsPerEmployee,
-                    consumedCount: 0,
-                    expiredCount: 0,
-                    remainingMonthlyAllocations: calendarStats.allocationsPerEmployee
-                  };
+        <div className="flex items-center space-x-6 text-right">
+          <div>
+            <span className="text-xs text-slate-400 block">Total Generated Credits</span>
+            <span className="text-2xl font-black text-brand-green">
+              {(100 * calendarStats.allocationsPerEmployee).toLocaleString()} Meals
+            </span>
+          </div>
 
-                  return (
-                    <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="px-5 py-3 font-mono font-bold text-slate-primary">
-                        {emp.id}
-                      </td>
-                      <td className="px-5 py-3">
-                        <div>
-                          <span className="font-semibold text-slate-primary block">{emp.name}</span>
-                          <span className="text-[11px] text-slate-secondary">{emp.department} • {emp.designation}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                          emp.category === 'Junior' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
-                          emp.category === 'Senior' ? 'bg-sky-100 text-sky-800 border border-sky-200' :
-                          'bg-purple-100 text-purple-800 border border-purple-200'
-                        }`}>
-                          {emp.category}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-center font-medium text-slate-primary">
-                        3 Meals / Day
-                      </td>
-                      <td className="px-5 py-3 text-center font-bold text-slate-primary">
-                        {alloc.totalMonthlyQuota} Meals
-                      </td>
-                      <td className="px-5 py-3 text-center">
-                        <span className={`font-bold ${alloc.consumedCount > 0 ? 'text-brand-blue' : 'text-slate-400'}`}>
-                          {alloc.consumedCount} Consumed
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-center text-rose-600 font-medium">
-                        {alloc.expiredCount} Missed
-                      </td>
-                      <td className="px-5 py-3 text-center">
-                        <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-brand-green border border-emerald-300 shadow-xs">
-                          <span>{alloc.remainingMonthlyAllocations} Meals</span>
-                          {alloc.consumedCount > 0 && <span className="text-[10px] text-emerald-700 font-bold ml-1">(-{alloc.consumedCount})</span>}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <button
-                          onClick={() => setSelectedEmployeeDetail({ emp, alloc })}
-                          className="px-2.5 py-1 text-[11px] font-semibold text-brand-blue hover:text-brand-blue-dark bg-sky-50 hover:bg-sky-100 rounded-lg transition-colors cursor-pointer inline-flex items-center space-x-1"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Ledger</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+          <div className="hidden sm:flex items-center space-x-1.5 bg-brand-green/20 border border-brand-green/40 px-3 py-1.5 rounded-xl text-xs font-semibold text-brand-green">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Synced</span>
+          </div>
         </div>
       </div>
 
@@ -484,7 +613,7 @@ export default function MealAllocation() {
         isOpen={isGenerateModalOpen}
         onClose={() => setIsGenerateModalOpen(false)}
         title="Generate Monthly Meal Allocation"
-        subtitle="Calculates token credits for Junior and Senior workforce based on calendar working days."
+        subtitle="Calculates token credits for Junior, Senior, and VIP workforce based on calendar working days."
       >
         <form onSubmit={handleGenerateSubmit} className="space-y-4">
           <div>
@@ -493,10 +622,10 @@ export default function MealAllocation() {
             </label>
             <select
               value={selectedMonth}
-              onChange={handleMonthChange}
+              onChange={(e) => handleMonthChange(e.target.value, false)}
               className="w-full px-3 py-2 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green"
             >
-              {months.map((m) => (
+              {allMonths.map((m) => (
                 <option key={m.label} value={m.label}>
                   {m.label}
                 </option>
@@ -518,21 +647,33 @@ export default function MealAllocation() {
               className="w-full px-3 py-2 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green"
             />
             <p className="text-[11px] text-slate-muted mt-1">
-              Calculated automatically based on 8 off-days.
+              {calendarStats.offDaysCount} off-days ({calendarStats.fridaysCount} Fridays + {calendarStats.saturdaysCount} Saturdays) excluded automatically.
             </p>
           </div>
 
           <div className="p-3 bg-slate-50 rounded-xl border border-surface-border text-xs space-y-1">
             <div className="flex justify-between">
-              <span className="text-slate-secondary">Junior Credits to Generate:</span>
+              <span className="text-slate-secondary">Junior Credits to Generate (40 Staff):</span>
               <span className="font-bold text-slate-primary">
-                {((mealAllocation.categories.find(c => c.category === 'Junior')?.totalEmployees || 40) * workingDaysInput * 3).toLocaleString()} Credits
+                {(40 * workingDaysInput * 3).toLocaleString()} Credits
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-secondary">Senior Credits to Generate:</span>
+              <span className="text-slate-secondary">Senior Credits to Generate (40 Staff):</span>
               <span className="font-bold text-slate-primary">
-                {((mealAllocation.categories.find(c => c.category === 'Senior')?.totalEmployees || 40) * workingDaysInput * 3).toLocaleString()} Credits
+                {(40 * workingDaysInput * 3).toLocaleString()} Credits
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-secondary">VIP Credits to Generate (20 Staff):</span>
+              <span className="font-bold text-slate-primary">
+                {(20 * workingDaysInput * 3).toLocaleString()} Credits
+              </span>
+            </div>
+            <div className="pt-2 border-t border-slate-200 flex justify-between font-bold">
+              <span className="text-slate-800">Total Workforce Allocation:</span>
+              <span className="text-brand-green">
+                {(100 * workingDaysInput * 3).toLocaleString()} Credits
               </span>
             </div>
           </div>
@@ -541,15 +682,15 @@ export default function MealAllocation() {
             <button
               type="button"
               onClick={() => setIsGenerateModalOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-slate-secondary hover:text-slate-primary rounded-xl"
+              className="px-4 py-2 text-xs font-semibold text-slate-secondary hover:text-slate-primary rounded-xl cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-semibold text-white bg-brand-green hover:bg-brand-green-hover rounded-xl shadow-pill transition-all"
+              className="px-5 py-2 text-xs font-semibold text-white bg-brand-green hover:bg-brand-green-hover rounded-xl shadow-pill transition-all cursor-pointer"
             >
-              Generate Quota
+              Confirm & Generate Quota
             </button>
           </div>
         </form>
@@ -571,12 +712,20 @@ export default function MealAllocation() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-secondary">Total Personnel:</span>
-                <span className="font-semibold text-slate-primary">{selectedCategoryDetail.totalEmployees}</span>
+                <span className="font-semibold text-slate-primary">{selectedCategoryDetail.totalEmployees} Staff</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-secondary">Active Working Days:</span>
+                <span className="font-semibold text-slate-primary">{calendarStats.workingDaysCount} Days</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-secondary">Quota Per Employee:</span>
+                <span className="font-semibold text-slate-primary">{calendarStats.allocationsPerEmployee} Meals</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-secondary">Monthly Credits:</span>
                 <span className="font-bold text-brand-green">
-                  {selectedCategoryDetail.monthlyCredits ? selectedCategoryDetail.monthlyCredits.toLocaleString() : 'On Demand'}
+                  {selectedCategoryDetail.monthlyCredits ? selectedCategoryDetail.monthlyCredits.toLocaleString() : 'N/A'} Credits
                 </span>
               </div>
               <div className="flex justify-between">
@@ -586,13 +735,13 @@ export default function MealAllocation() {
             </div>
 
             <p className="text-slate-secondary text-[11px]">
-              Tokens are refreshed daily at 00:00. Unconsumed tokens for previous shifts are purged daily to reflect accurate mess wastage data.
+              Tokens are refreshed daily at 00:00. Unconsumed tokens for previous shifts are purged daily to reflect accurate mess wastage data. Camp off-days (Fridays and Saturdays) are strictly excluded with 0 credits allotted.
             </p>
 
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setSelectedCategoryDetail(null)}
-                className="px-4 py-2 text-xs font-semibold bg-brand-blue text-white rounded-xl shadow-xs"
+                className="px-4 py-2 text-xs font-semibold bg-brand-blue text-white rounded-xl shadow-xs cursor-pointer"
               >
                 Close
               </button>
@@ -639,7 +788,7 @@ export default function MealAllocation() {
           <div className="pt-4 border-t border-surface-border flex justify-end space-x-3">
             <button
               onClick={() => setIsEditModalOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-slate-secondary"
+              className="px-4 py-2 text-xs font-semibold text-slate-secondary cursor-pointer"
             >
               Cancel
             </button>
@@ -648,118 +797,13 @@ export default function MealAllocation() {
                 setIsEditModalOpen(false);
                 addToast('Allocation rules updated successfully.');
               }}
-              className="px-5 py-2 text-xs font-semibold text-white bg-brand-green rounded-xl shadow-pill"
+              className="px-5 py-2 text-xs font-semibold text-white bg-brand-green rounded-xl shadow-pill cursor-pointer"
             >
               Save Configuration
             </button>
           </div>
         </div>
       </Modal>
-
-      {/* Modal: Individual Employee Allocation Ledger */}
-      {selectedEmployeeDetail && (
-        <Modal
-          isOpen={!!selectedEmployeeDetail}
-          onClose={() => setSelectedEmployeeDetail(null)}
-          title={`Employee Allocation Ledger: ${selectedEmployeeDetail.emp.name}`}
-          subtitle={`Staff ID: ${selectedEmployeeDetail.emp.id} • ${selectedEmployeeDetail.emp.category} Tier • ${selectedEmployeeDetail.emp.department}`}
-        >
-          <div className="space-y-4 text-xs">
-            {/* Macro Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <div className="p-3 bg-slate-50 rounded-xl border border-surface-border text-center">
-                <span className="text-[10px] text-slate-secondary block">Monthly Quota</span>
-                <span className="text-base font-bold text-slate-primary">{selectedEmployeeDetail.alloc.totalMonthlyQuota} Meals</span>
-                <span className="text-[10px] text-slate-muted block">22 active days</span>
-              </div>
-              <div className="p-3 bg-sky-50 rounded-xl border border-sky-100 text-center">
-                <span className="text-[10px] text-sky-800 block">Consumed</span>
-                <span className="text-base font-bold text-brand-blue">{selectedEmployeeDetail.alloc.consumedCount} Meals</span>
-                <span className="text-[10px] text-brand-blue/80 block">Logged entries</span>
-              </div>
-              <div className="p-3 bg-rose-50 rounded-xl border border-rose-100 text-center">
-                <span className="text-[10px] text-rose-800 block">Missed / Expired</span>
-                <span className="text-base font-bold text-rose-600">{selectedEmployeeDetail.alloc.expiredCount} Meals</span>
-                <span className="text-[10px] text-rose-500 block">Passed windows</span>
-              </div>
-              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-center">
-                <span className="text-[10px] text-emerald-800 block">Remaining</span>
-                <span className="text-base font-black text-brand-green">{selectedEmployeeDetail.alloc.remainingMonthlyAllocations} Meals</span>
-                <span className="text-[10px] text-emerald-700 font-semibold block">Live Balance</span>
-              </div>
-            </div>
-
-            {/* Today's 3 Meal Windows */}
-            <div className="p-3 bg-slate-50 rounded-xl border border-surface-border space-y-2">
-              <span className="font-bold text-slate-primary text-xs block">Today's Service Schedule & Window Status:</span>
-              <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
-                <div className="p-2 bg-white rounded-lg border border-slate-200">
-                  <span className="font-semibold block text-slate-700">Breakfast</span>
-                  <span className="text-[10px] text-slate-400">09:00 - 10:00</span>
-                  <span className="font-bold block mt-1 text-slate-900">
-                    {selectedEmployeeDetail.alloc.todayMealsStatus.breakfast.status}
-                  </span>
-                </div>
-                <div className="p-2 bg-white rounded-lg border border-slate-200">
-                  <span className="font-semibold block text-slate-700">Lunch</span>
-                  <span className="text-[10px] text-slate-400">14:00 - 15:00</span>
-                  <span className="font-bold block mt-1 text-slate-900">
-                    {selectedEmployeeDetail.alloc.todayMealsStatus.lunch.status}
-                  </span>
-                </div>
-                <div className="p-2 bg-white rounded-lg border border-slate-200">
-                  <span className="font-semibold block text-slate-700">Dinner</span>
-                  <span className="text-[10px] text-slate-400">19:00 - 20:00</span>
-                  <span className="font-bold block mt-1 text-slate-900">
-                    {selectedEmployeeDetail.alloc.todayMealsStatus.dinner.status}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Log of recorded meals for this employee */}
-            <div>
-              <span className="font-bold text-slate-primary text-xs block mb-1.5">Recorded Attendance Entries:</span>
-              {(() => {
-                const empEntries = (data.mealEntries || []).filter(e => e.employeeId === selectedEmployeeDetail.emp.id);
-                if (empEntries.length === 0) {
-                  return (
-                    <div className="p-4 bg-slate-50 rounded-xl text-center text-slate-secondary text-xs">
-                      No meals recorded yet for this employee. When this employee checks in at the Entry Panel, 1 allocation will be minused and recorded here.
-                    </div>
-                  );
-                }
-                return (
-                  <div className="max-h-40 overflow-y-auto space-y-1.5 border border-surface-border rounded-xl p-2 bg-white">
-                    {empEntries.map((entry) => (
-                      <div key={entry.id} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
-                        <div className="flex items-center space-x-2">
-                          <CheckCircle2 className="w-4 h-4 text-brand-green" />
-                          <span className="font-semibold text-slate-primary">{entry.mealType}</span>
-                          <span className="text-slate-400 text-[11px]">• {entry.date} at {entry.timestamp}</span>
-                        </div>
-                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                          -1 Allocation
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div>
-
-            <div className="flex justify-end pt-2 border-t border-surface-border">
-              <button
-                onClick={() => setSelectedEmployeeDetail(null)}
-                className="px-4 py-2 text-xs font-semibold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }
-
