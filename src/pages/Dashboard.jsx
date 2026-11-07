@@ -3,7 +3,6 @@ import EmployeeOverview from '../components/dashboard/EmployeeOverview';
 import WastageOverview from '../components/dashboard/WastageOverview';
 import LiveAttendanceOverview from '../components/dashboard/LiveAttendanceOverview';
 import FinanceOverview from '../components/dashboard/FinanceOverview';
-import AllocationOverview from '../components/dashboard/AllocationOverview';
 import TimetableOverview from '../components/dashboard/TimetableOverview';
 import EventsOverview from '../components/dashboard/EventsOverview';
 
@@ -25,13 +24,12 @@ export default function Dashboard() {
         <LiveAttendanceOverview />
       </div>
 
-      {/* Row 3: Finance Overview + Meal Allocation & Events */}
+      {/* Row 3: Finance Overview + Events */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
         <div className="lg:col-span-7 flex flex-col">
           <FinanceOverview />
         </div>
-        <div className="lg:col-span-5 flex flex-col justify-between gap-4 sm:gap-4.5">
-          <AllocationOverview />
+        <div className="lg:col-span-5 flex flex-col">
           <EventsOverview />
         </div>
       </div>

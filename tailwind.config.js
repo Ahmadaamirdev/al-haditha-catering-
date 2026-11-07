@@ -24,7 +24,7 @@ export default {
         surface: {
           bg: '#F5F8FB',
           card: '#FFFFFF',
-          border: '#DFE7EE',
+          border: '#D0E5D9', // Subtle, premium greenish shade derived from Al Haditha logo (#009B4D)
         },
         slate: {
           primary: '#152338',

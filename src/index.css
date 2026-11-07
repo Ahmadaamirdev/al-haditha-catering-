@@ -29,3 +29,9 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
+
+/* Premium subtle greenish card border outline matching brand logo (#009B4D) */
+.shadow-card {
+  border-color: #D0E5D9;
+}
+
