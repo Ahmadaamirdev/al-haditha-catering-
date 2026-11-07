@@ -7,6 +7,107 @@ import { computeCategoryFinance } from '../utils/financeEngine';
 const AppContext = createContext(null);
 const STORAGE_KEY = 'alhaditha_mess_clean_v3';
 
+// Default preserved events
+const defaultAlHadithaEvent = {
+  id: 'EVT-1001',
+  title: 'al haditha meeting',
+  day: '20',
+  month: 'Nov',
+  fullDate: '2026-11-20',
+  time: '18:00 - 21:00',
+  location: 'Main Camp Mess Hall',
+  description: 'Executive board and catering committee quarterly dinner.',
+  category: 'VIP',
+  status: 'Confirmed',
+  statusType: 'success',
+  invitedCount: 8,
+  expectedCount: 8,
+  perPersonBudget: 30,
+  overallBudget: 240,
+  menuChanged: false,
+  menuDetails: 'Executive VIP Banquet: Grilled Lamb, Fresh Saffron Rice, Mezza and Arabic Sweets.',
+  invitedEmployees: []
+};
+
+// Central helper to dynamically synchronize all dashboard metrics directly with actual mealEntries
+export function harmonizeStateMetrics(state) {
+  if (!state) return state;
+
+  const entries = state.mealEntries || [];
+  const juniorCount = entries.filter((m) => (m.category || '').toLowerCase() === 'junior').length;
+  const seniorCount = entries.filter((m) => (m.category || '').toLowerCase() === 'senior').length;
+  const vipCount = entries.filter((m) => (m.category || '').toLowerCase() === 'vip').length;
+  const totalConsumed = juniorCount + seniorCount + vipCount;
+  const totalAllocated = state.wastageOverview?.totalAllocated || 300;
+
+  // 1. Employee Overview eating counts & progress
+  const updatedEmployeeOverview = {
+    junior: {
+      category: 'Junior',
+      total: 40,
+      color: '#009B4D',
+      bgColor: '#E5F5EC',
+      ...(state.employeeOverview?.junior || {}),
+      eating: juniorCount,
+      percentage: Math.min(100, Math.round((juniorCount / 40) * 100)),
+    },
+    senior: {
+      category: 'Senior',
+      total: 40,
+      color: '#1684AA',
+      bgColor: '#E7F2F9',
+      ...(state.employeeOverview?.senior || {}),
+      eating: seniorCount,
+      percentage: Math.min(100, Math.round((seniorCount / 40) * 100)),
+    },
+    vip: {
+      category: 'VIP',
+      total: 20,
+      color: '#009B4D',
+      bgColor: '#E5F5EC',
+      ...(state.employeeOverview?.vip || {}),
+      eating: vipCount,
+      percentage: Math.min(100, Math.round((vipCount / 20) * 100)),
+    },
+  };
+
+  // 2. Wastage Overview consumption metrics
+  const updatedWastage = {
+    ...(state.wastageOverview || {}),
+    consumedMeals: totalConsumed,
+    consumptionPercentage: Math.min(100, Math.round((totalConsumed / totalAllocated) * 100)),
+    wastedMeals: state.wastageOverview?.wastedMeals || 0,
+    records: state.wastageOverview?.records || [],
+  };
+
+  // 3. Finance Overview synchronization
+  const fin = computeCategoryFinance({
+    financeOverview: state.financeOverview,
+    mealEntries: entries,
+  });
+  const updatedFinance = {
+    ...(state.financeOverview || {}),
+    monthlyExpenditure: fin.totalActual,
+    monthlyRemaining: fin.totalRemaining,
+    utilizationRate: fin.utilizationRate,
+    budgetVsActual: fin.budgetVsActual,
+    budgetStatus: fin.budgetStatus,
+  };
+
+  // 4. Events safeguard
+  const currentEvents = Array.isArray(state.events) && state.events.length > 0 
+    ? state.events 
+    : [defaultAlHadithaEvent];
+
+  return {
+    ...state,
+    events: currentEvents,
+    employeeOverview: updatedEmployeeOverview,
+    wastageOverview: updatedWastage,
+    financeOverview: updatedFinance,
+  };
+}
+
 export function AppProvider({ children }) {
   const [data, setData] = useState(() => {
     try {
@@ -16,32 +117,16 @@ export function AppProvider({ children }) {
         if (!parsed.employees || parsed.employees.length !== 100) {
           parsed.employees = alHadithaEmployees;
         }
-        // Initialize events as empty if mock events were previously present (for user clean test)
-        if (!parsed.events || parsed.events.some((e) => e.id === 'EVT-101' || e.id === 'EVT-102' || e.id === 'EVT-103')) {
-          parsed.events = [];
-        }
-        // Harmonize finance data with real meal entries
-        const fin = computeCategoryFinance({
-          financeOverview: parsed.financeOverview,
-          mealEntries: parsed.mealEntries || []
-        });
-        parsed.financeOverview = {
-          ...parsed.financeOverview,
-          monthlyExpenditure: fin.totalActual,
-          monthlyRemaining: fin.totalRemaining,
-          utilizationRate: fin.utilizationRate,
-          budgetVsActual: fin.budgetVsActual,
-          budgetStatus: fin.budgetStatus,
-        };
-        return parsed;
+        return harmonizeStateMetrics(parsed);
       }
     } catch {
       // Ignore parse errors, fallback to initial
     }
-    return {
+    return harmonizeStateMetrics({
       ...initialMockData,
       employees: alHadithaEmployees,
-    };
+      events: [defaultAlHadithaEvent],
+    });
   });
 
   const [currency, setCurrency] = useState('OMR'); // Strictly OMR (Omani Rial)
@@ -60,50 +145,50 @@ export function AppProvider({ children }) {
           if (mongoData && mongoData.employees && isMounted) {
             setIsMongoConnected(true);
 
-            // Check if local storage has any entries to merge
+            // Merge entries & events from both MongoDB and localStorage
             const localSaved = localStorage.getItem(STORAGE_KEY);
-            let mergedData = mongoData;
+            let mergedData = { ...mongoData };
+
             if (localSaved) {
               try {
                 const localData = JSON.parse(localSaved);
+                
+                // 1. Merge Meal Entries
                 const localEntries = localData.mealEntries || [];
                 const mongoEntries = mongoData.mealEntries || [];
                 const entryMap = new Map();
                 [...localEntries, ...mongoEntries].forEach((e) => {
                   if (e && e.id) entryMap.set(e.id, e);
                 });
-                const combinedEntries = Array.from(entryMap.values());
-                if (combinedEntries.length > mongoEntries.length) {
-                  mergedData = {
-                    ...mongoData,
-                    mealEntries: combinedEntries,
-                  };
-                  fetch('/api/data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(mergedData),
-                  }).catch(() => {});
-                }
+                mergedData.mealEntries = Array.from(entryMap.values());
+
+                // 2. Merge Events
+                const localEvents = localData.events || [];
+                const mongoEvents = mongoData.events || [];
+                const eventMap = new Map();
+                [...localEvents, ...mongoEvents].forEach((evt) => {
+                  if (evt && evt.id) eventMap.set(evt.id, evt);
+                });
+                const combinedEvents = Array.from(eventMap.values());
+                mergedData.events = combinedEvents.length > 0 ? combinedEvents : [defaultAlHadithaEvent];
               } catch {
                 // Ignore parse errors
               }
+            } else if (!mergedData.events || mergedData.events.length === 0) {
+              mergedData.events = [defaultAlHadithaEvent];
             }
 
-            // Harmonize finance data with real meal entries
-            const fin = computeCategoryFinance({
-              financeOverview: mergedData.financeOverview,
-              mealEntries: mergedData.mealEntries || []
-            });
-            mergedData.financeOverview = {
-              ...mergedData.financeOverview,
-              monthlyExpenditure: fin.totalActual,
-              monthlyRemaining: fin.totalRemaining,
-              utilizationRate: fin.utilizationRate,
-              budgetVsActual: fin.budgetVsActual,
-              budgetStatus: fin.budgetStatus,
-            };
+            // Harmonize all metrics (Employee Overview eating counts, Wastage consumed, Finance)
+            const harmonized = harmonizeStateMetrics(mergedData);
 
-            setData(mergedData);
+            // Sync harmonized back to MongoDB if new entries or events were added
+            fetch('/api/data', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(harmonized),
+            }).catch(() => {});
+
+            setData(harmonized);
           }
         }
       } catch (err) {
@@ -506,90 +591,22 @@ export function AppProvider({ children }) {
 
   const deleteMealEntry = (entryId) => {
     setData((prev) => {
-      const target = (prev.mealEntries || []).find((e) => e.id === entryId);
-      if (!target) return prev;
-      const catKey = target.category.toLowerCase();
-      const prevCat = prev.employeeOverview[catKey];
-      const newEating = Math.max(0, (prevCat?.eating || 1) - 1);
-      const totalEmp = prevCat?.total || 40;
-      const newPercentage = Math.round((newEating / totalEmp) * 100);
-
-      const newConsumed = Math.max(0, (prev.wastageOverview?.consumedMeals || 1) - 1);
-      const mealRate = prev.financeOverview?.categoryRates?.[catKey]?.rate || 10;
-
-      const remainingEntries = prev.mealEntries.filter((e) => e.id !== entryId);
-      const fin = computeCategoryFinance({
-        financeOverview: prev.financeOverview,
-        mealEntries: remainingEntries
-      });
-
-      return {
+      const remainingEntries = (prev.mealEntries || []).filter((e) => e.id !== entryId);
+      return harmonizeStateMetrics({
         ...prev,
         mealEntries: remainingEntries,
-        employeeOverview: {
-          ...prev.employeeOverview,
-          [catKey]: {
-            ...prevCat,
-            eating: newEating,
-            percentage: newPercentage,
-          },
-        },
-        wastageOverview: {
-          ...prev.wastageOverview,
-          consumedMeals: newConsumed,
-          consumptionPercentage: Math.round((newConsumed / (prev.wastageOverview?.totalAllocated || 300)) * 100),
-        },
-        financeOverview: {
-          ...prev.financeOverview,
-          monthlyExpenditure: fin.totalActual,
-          monthlyRemaining: fin.totalRemaining,
-          utilizationRate: fin.utilizationRate,
-          budgetVsActual: fin.budgetVsActual,
-          budgetStatus: fin.budgetStatus,
-        },
-      };
+      });
     });
     addToast('Meal entry removed.', 'info');
   };
 
   const resetAllEntriesToZero = () => {
-    const fin = computeCategoryFinance({
-      financeOverview: { monthlyTotalBudget: 65000 },
-      mealEntries: []
+    setData((prev) => {
+      return harmonizeStateMetrics({
+        ...prev,
+        mealEntries: [],
+      });
     });
-
-    setData((prev) => ({
-      ...prev,
-      mealEntries: [],
-      employeeOverview: {
-        junior: { ...prev.employeeOverview.junior, total: 40, eating: 0, percentage: 0 },
-        senior: { ...prev.employeeOverview.senior, total: 40, eating: 0, percentage: 0 },
-        vip: { ...prev.employeeOverview.vip, total: 20, eating: 0, percentage: 0 },
-      },
-      wastageOverview: {
-        ...prev.wastageOverview,
-        consumedMeals: 0,
-        wastedMeals: 0,
-        consumptionPercentage: 0,
-        records: []
-      },
-      mealAllocation: {
-        ...prev.mealAllocation,
-        categories: (prev.mealAllocation?.categories || []).map((c) => ({
-          ...c,
-          consumedCredits: 0,
-          remainingCredits: c.monthlyCredits || (c.totalEmployees * 22 * 3),
-        })),
-      },
-      financeOverview: {
-        ...prev.financeOverview,
-        monthlyExpenditure: 0,
-        monthlyRemaining: prev.financeOverview?.monthlyTotalBudget || 65000,
-        utilizationRate: 0,
-        budgetVsActual: fin.budgetVsActual,
-        budgetStatus: fin.budgetStatus,
-      },
-    }));
     addToast('All meal entries reset to 0. Ready for testing!', 'info');
   };
 

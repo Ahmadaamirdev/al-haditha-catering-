@@ -78,6 +78,22 @@ app.get('/api/data', async (req, res) => {
       await stateCol.insertOne(state);
     }
 
+    // Ensure events collection is synchronized if state.events is empty
+    if (!state.events || state.events.length === 0) {
+      const dbEvents = await database.collection('events').find({}).toArray();
+      if (dbEvents.length > 0) {
+        state.events = dbEvents;
+      }
+    }
+
+    // Ensure mealEntries collection is synchronized if state.mealEntries is empty
+    if (!state.mealEntries || state.mealEntries.length === 0) {
+      const dbEntries = await database.collection('mealEntries').find({}).toArray();
+      if (dbEntries.length > 0) {
+        state.mealEntries = dbEntries;
+      }
+    }
+
     res.json(state);
   } catch (err) {
     console.error('Error fetching data from MongoDB:', err);
