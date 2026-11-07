@@ -34,6 +34,17 @@ async function connectToMongo() {
   }
 }
 
+// Ensure MongoDB is connected for every request (essential for serverless Vercel cold starts)
+app.use(async (req, res, next) => {
+  try {
+    await connectToMongo();
+    next();
+  } catch (err) {
+    console.error('MongoDB connection middleware error:', err);
+    res.status(500).json({ error: 'Database connection failed', details: err.message });
+  }
+});
+
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
@@ -188,14 +199,17 @@ app.delete('/api/meal-entries/:id', async (req, res) => {
   }
 });
 
-// Connect to MongoDB and start Express server
-connectToMongo()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`✓ Al Haditha Mess Server listening on http://localhost:${PORT}`);
+// Connect to MongoDB and start Express server when running locally or standalone
+if (!process.env.VERCEL) {
+  connectToMongo()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`✓ Al Haditha Mess Server listening on http://localhost:${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error('Could not start server due to MongoDB error:', err);
     });
-  })
-  .catch((err) => {
-    console.error('Could not start server due to MongoDB error:', err);
-    process.exit(1);
-  });
+}
+
+export default app;
