@@ -47,14 +47,97 @@ export function AppProvider({ children }) {
   const [currency, setCurrency] = useState('OMR'); // Strictly OMR (Omani Rial)
   const [toasts, setToasts] = useState([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMongoConnected, setIsMongoConnected] = useState(false);
 
-  // Sync to local storage
+  // Initial load from MongoDB Atlas & merge with local pending state
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchFromMongo() {
+      try {
+        const res = await fetch('/api/data');
+        if (res.ok) {
+          const mongoData = await res.json();
+          if (mongoData && mongoData.employees && isMounted) {
+            setIsMongoConnected(true);
+
+            // Check if local storage has any entries to merge
+            const localSaved = localStorage.getItem(STORAGE_KEY);
+            let mergedData = mongoData;
+            if (localSaved) {
+              try {
+                const localData = JSON.parse(localSaved);
+                const localEntries = localData.mealEntries || [];
+                const mongoEntries = mongoData.mealEntries || [];
+                const entryMap = new Map();
+                [...localEntries, ...mongoEntries].forEach((e) => {
+                  if (e && e.id) entryMap.set(e.id, e);
+                });
+                const combinedEntries = Array.from(entryMap.values());
+                if (combinedEntries.length > mongoEntries.length) {
+                  mergedData = {
+                    ...mongoData,
+                    mealEntries: combinedEntries,
+                  };
+                  fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mergedData),
+                  }).catch(() => {});
+                }
+              } catch {
+                // Ignore parse errors
+              }
+            }
+
+            // Harmonize finance data with real meal entries
+            const fin = computeCategoryFinance({
+              financeOverview: mergedData.financeOverview,
+              mealEntries: mergedData.mealEntries || []
+            });
+            mergedData.financeOverview = {
+              ...mergedData.financeOverview,
+              monthlyExpenditure: fin.totalActual,
+              monthlyRemaining: fin.totalRemaining,
+              utilizationRate: fin.utilizationRate,
+              budgetVsActual: fin.budgetVsActual,
+              budgetStatus: fin.budgetStatus,
+            };
+
+            setData(mergedData);
+          }
+        }
+      } catch (err) {
+        console.warn('MongoDB connection offline, using cached data:', err.message);
+      }
+    }
+    fetchFromMongo();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Sync to local storage & MongoDB Atlas in real-time
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
       // Storage quota or private mode fallback
     }
+
+    const timer = setTimeout(() => {
+      fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+        .then((res) => {
+          if (res.ok) setIsMongoConnected(true);
+        })
+        .catch((err) => {
+          console.warn('MongoDB sync offline/pending:', err.message);
+          setIsMongoConnected(false);
+        });
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, [data]);
 
   // Cross-tab real-time sync: when an entry is recorded in Entry Panel in another tab, update immediately
@@ -646,6 +729,7 @@ export function AppProvider({ children }) {
         toasts,
         addToast,
         removeToast,
+        isMongoConnected,
         isMobileMenuOpen,
         setIsMobileMenuOpen,
         updateCategoryBudget,

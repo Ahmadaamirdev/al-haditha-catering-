@@ -4,7 +4,7 @@ import { Menu, Calendar, ChevronDown, User, Check, Shield, Bell, UserCheck } fro
 import { useApp } from '../../context/AppContext';
 
 export default function Header() {
-  const { data, currency, setCurrency, isMobileMenuOpen, setIsMobileMenuOpen, addToast } = useApp();
+  const { data, currency, setCurrency, isMobileMenuOpen, setIsMobileMenuOpen, isMongoConnected, addToast } = useApp();
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState('Monday, 3 Nov 2025');
@@ -57,6 +57,13 @@ export default function Header() {
             <span className="w-2 h-2 rounded-full bg-[#009B4D]" />
             <span className="text-[#009B4D] font-bold">OMR</span>
             <span className="text-slate-400 font-normal">Omani Rial</span>
+          </div>
+
+          {/* MongoDB Atlas Sync Pill */}
+          <div className="hidden lg:flex items-center space-x-1.5 bg-white border border-surface-border rounded-xl px-2.5 py-1.5 shadow-xs text-xs font-medium" title="MongoDB Atlas Connected">
+            <span className={`w-2 h-2 rounded-full ${isMongoConnected ? 'bg-[#009B4D]' : 'bg-amber-400'}`} />
+            <span className="text-slate-primary font-semibold text-[11px]">MongoDB</span>
+            <span className="text-[10px] text-brand-green font-semibold uppercase tracking-wider">{isMongoConnected ? 'Live' : 'Syncing'}</span>
           </div>
 
           {/* Date Selector Pill */}

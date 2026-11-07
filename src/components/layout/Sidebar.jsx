@@ -14,7 +14,7 @@ import {
   Users
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import logoAsset from '../../assets/logo.jpg';
+import logoAsset from '../../assets/logo.png';
 
 export default function Sidebar() {
   const { isMobileMenuOpen, setIsMobileMenuOpen, addToast } = useApp();
@@ -61,14 +61,14 @@ export default function Sidebar() {
           <div className="flex items-center justify-between px-2 mb-8">
             <div 
               onClick={() => { navigate('/'); closeMobile(); }}
-              className="cursor-pointer group flex items-center space-x-2"
+              className="cursor-pointer group flex items-center w-full"
             >
               {/* Logo Presentation: High-fidelity styling matching reference */}
-              <div className="bg-white rounded-lg p-1.5 shadow-sm transition-transform group-hover:scale-[1.02] flex items-center justify-center">
+              <div className="bg-white rounded-xl p-2 sm:p-2.5 shadow-sm transition-transform group-hover:scale-[1.02] flex items-center justify-center w-full">
                 <img 
                   src={logoAsset} 
                   alt="Al Haditha Energy" 
-                  className="h-9 w-auto object-contain"
+                  className="h-10 sm:h-11 w-auto max-w-full object-contain"
                 />
               </div>
             </div>
@@ -76,7 +76,7 @@ export default function Sidebar() {
             {/* Mobile close button */}
             <button 
               onClick={closeMobile}
-              className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10"
+              className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 ml-2"
             >
               <X className="w-5 h-5" />
             </button>

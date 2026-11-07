@@ -46,6 +46,8 @@ A production-quality, responsive admin dashboard for **Al Haditha Energy – Emp
 
 - **React 19**
 - **Vite**
+- **Express.js & Node.js Backend API**
+- **MongoDB Atlas** (Persistent cloud database with automatic offline cache)
 - **Tailwind CSS v3**
 - **React Router DOM v7**
 - **Recharts**
@@ -57,9 +59,12 @@ A production-quality, responsive admin dashboard for **Al Haditha Energy – Emp
 # Install dependencies
 npm install
 
-# Start development server
+# Start development servers (Express API + Vite Frontend concurrently)
 npm run dev
 
-# Build for production
+# Run MongoDB migration / seed manually
+npm run db:migrate
+
+# Build frontend for production
 npm run build
 ```

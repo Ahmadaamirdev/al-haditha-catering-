@@ -26,7 +26,7 @@ import {
   MEAL_WINDOWS, 
   getCurrentActiveMealWindow 
 } from '../utils/allocationEngine';
-import logoAsset from '../assets/logo.jpg';
+import logoAsset from '../assets/logo.png';
 
 // Preset simulation modes to easily verify Day 1, Day 2, and all 3 meal windows
 const SIMULATION_MODES = [
