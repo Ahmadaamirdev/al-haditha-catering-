@@ -16,15 +16,10 @@ export default function EmployeeOverview() {
     addToast(`Filter updated to ${opt}`);
   };
 
-  const totalEating = (employeeOverview.junior.eating || 0) + (employeeOverview.senior.eating || 0) + (employeeOverview.vip.eating || 0);
-  const totalStaff = 100;
-  const overallPercentage = Math.round((totalEating / totalStaff) * 100);
-
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow h-full flex flex-col justify-between">
-      <div>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-2xl p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow h-full flex flex-col justify-between">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2.5">
             <div className="p-1.5 rounded-lg bg-sky-50 text-brand-blue">
               <Users className="w-5 h-5 text-brand-blue" />
@@ -140,21 +135,6 @@ export default function EmployeeOverview() {
               style={{ width: `${employeeOverview.vip.percentage}%` }}
             />
           </div>
-        </div>
-      </div>
-      </div>
-
-      {/* Bottom Summary Bar */}
-      <div className="mt-4 pt-3 border-t border-surface-border flex flex-wrap items-center justify-between gap-2 text-xs text-slate-secondary">
-        <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-brand-green" />
-          <span>Total Workforce: <strong className="text-slate-primary font-semibold">100 Staff</strong> (40 Jr • 40 Sr • 20 VIP)</span>
-        </div>
-        <div className="flex items-center space-x-1.5">
-          <span>Active Today:</span>
-          <span className="font-bold text-brand-green bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-            {totalEating} Staff ({overallPercentage}%)
-          </span>
         </div>
       </div>
     </div>

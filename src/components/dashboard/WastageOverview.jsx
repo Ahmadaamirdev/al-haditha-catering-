@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PieChart as PieIcon, ArrowRight, Sprout } from 'lucide-react';
+import { PieChart as PieIcon, ArrowRight } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useApp } from '../../context/AppContext';
 
@@ -20,9 +20,9 @@ export default function WastageOverview() {
       ];
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow flex flex-col justify-between h-full">
+    <div className="bg-white rounded-2xl p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow flex flex-col justify-between h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2.5">
           <div className="p-1.5 rounded-lg bg-sky-50 text-brand-blue">
             <PieIcon className="w-5 h-5 text-brand-blue" />
@@ -42,7 +42,7 @@ export default function WastageOverview() {
       </div>
 
       {/* Main Body: Donut Chart + Legend */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center my-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center my-auto py-1">
         {/* Donut Chart */}
         <div className="relative h-32 w-full flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
@@ -51,8 +51,8 @@ export default function WastageOverview() {
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={42}
-                outerRadius={58}
+                innerRadius={44}
+                outerRadius={60}
                 startAngle={90}
                 endAngle={-270}
                 paddingAngle={2}
@@ -97,19 +97,6 @@ export default function WastageOverview() {
               {wastageOverview.wastedMeals.toLocaleString()}
             </span>
           </div>
-        </div>
-      </div>
-
-      {/* Actionable insight badge */}
-      <div className="mt-3 bg-[#E5F5EC] border border-[#009B4D]/30 rounded-xl px-3 py-2 flex items-start space-x-2 text-xs text-slate-800">
-        <Sprout className="w-4 h-4 text-brand-green flex-shrink-0 mt-0.5" />
-        <div className="space-y-0.5">
-          <span className="font-bold text-brand-green block text-[11px] uppercase tracking-wide">
-            2-Week Consistency & +5% Buffer Optimization
-          </span>
-          <span className="font-medium text-[11px] text-slate-700 leading-snug block">
-            With consistent 80%–85% 2-week attendance across 100 staff, kitchen prep target is locked at 85 portions (+5% buffer), saving 45 meals/day in OMR.
-          </span>
         </div>
       </div>
     </div>
