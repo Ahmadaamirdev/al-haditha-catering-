@@ -92,8 +92,18 @@ export function harmonizeStateMetrics(state) {
     ? state.events 
     : [defaultAlHadithaEvent];
 
+  // 5. Current Month & Date synchronization (dynamically defaults to current date/month)
+  const now = new Date();
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const currentMonthStr = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+  const effectiveMonth = (!state.selectedMonth || state.selectedMonth.includes('2025')) ? currentMonthStr : state.selectedMonth;
+
   return {
     ...state,
+    selectedMonth: effectiveMonth,
     events: currentEvents,
     employeeOverview: updatedEmployeeOverview,
     wastageOverview: updatedWastage,

@@ -45,7 +45,18 @@ export default function MealAllocation() {
   }, []);
 
   // Initialize selected month from AppContext or default to November 2026
-  const [selectedMonth, setSelectedMonth] = useState(data.selectedMonth || 'November 2026');
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    if (data.selectedMonth && !data.selectedMonth.includes('2025')) {
+      return data.selectedMonth;
+    }
+    return 'November 2026';
+  });
+
+  useEffect(() => {
+    if (data.selectedMonth && !data.selectedMonth.includes('2025')) {
+      setSelectedMonth(data.selectedMonth);
+    }
+  }, [data.selectedMonth]);
 
   // Find active month object
   const activeMonthObj = useMemo(() => {

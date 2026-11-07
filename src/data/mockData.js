@@ -3,8 +3,8 @@ import { alHadithaEmployees } from './employeesData.js';
 
 export const initialMockData = {
   currency: 'OMR', // ERP currency strictly set to OMR (Omani Rial)
-  selectedMonth: 'November 2025',
-  currentDateFormatted: 'Monday, 3 Nov 2025',
+  selectedMonth: 'November 2026',
+  currentDateFormatted: 'Saturday, 7 Nov 2026',
 
   // 100 Employees Master Feed (40 Junior, 40 Senior, 20 VIP)
   employees: alHadithaEmployees,

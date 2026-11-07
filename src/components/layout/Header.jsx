@@ -1,26 +1,18 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, Calendar, ChevronDown, User, Check, Shield, Bell, UserCheck } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Menu, User, Shield } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export default function Header() {
-  const { data, currency, setCurrency, isMobileMenuOpen, setIsMobileMenuOpen, isMongoConnected, addToast } = useApp();
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const { isMobileMenuOpen, setIsMobileMenuOpen } = useApp();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('Monday, 3 Nov 2025');
-
-  const availableDates = [
-    'Monday, 3 Nov 2025',
-    'Tuesday, 4 Nov 2025',
-    'Wednesday, 5 Nov 2025',
-    'Thursday, 6 Nov 2025',
-    'Sunday, 9 Nov 2025',
-  ];
+  const location = useLocation();
+  const isDashboard = location.pathname === '/' || location.pathname === '';
 
   return (
-    <header className="sticky top-0 z-30 bg-[#F5F8FB]/90 backdrop-blur-md px-6 lg:px-8 py-4 transition-all">
-      <div className="flex items-center justify-between">
-        {/* Left: Greeting & Welcome text */}
+    <header className="sticky top-0 z-30 bg-[#F5F8FB]/90 backdrop-blur-md px-6 lg:px-8 py-3.5 transition-all">
+      <div className="flex items-center justify-between min-h-[40px]">
+        {/* Left: Greeting & Welcome text (Only on Dashboard) */}
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -30,90 +22,23 @@ export default function Header() {
             <Menu className="w-6 h-6" />
           </button>
 
-          <div>
-            <span className="block text-xs font-normal text-slate-secondary tracking-wide">
-              Welcome Back,
-            </span>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-primary tracking-tight leading-none mt-0.5">
-              Admin
-            </h1>
-          </div>
+          {isDashboard && (
+            <div>
+              <span className="block text-xs font-normal text-slate-secondary tracking-wide">
+                Welcome Back,
+              </span>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-primary tracking-tight leading-none mt-0.5">
+                Admin
+              </h1>
+            </div>
+          )}
         </div>
 
-        {/* Right: Kiosk Link + Currency Toggle + Date Picker Pill + Profile */}
+        {/* Right: Admin Profile */}
         <div className="flex items-center space-x-3 sm:space-x-4">
-          {/* Quick Access to Entry Panel */}
-          <Link
-            to="/entry"
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-brand-green hover:bg-brand-green-hover text-white text-xs font-semibold shadow-pill transition-all hover:scale-[1.02]"
-            title="Open Entry Panel"
-          >
-            <UserCheck className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Entry Panel</span>
-            <span className="sm:hidden">Entry</span>
-          </Link>
-          {/* Currency Display (OMR Only) */}
-          <div className="hidden sm:flex items-center space-x-1.5 bg-white border border-surface-border rounded-xl px-3 py-1.5 shadow-xs text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-[#009B4D]" />
-            <span className="text-[#009B4D] font-bold">OMR</span>
-            <span className="text-slate-400 font-normal">Omani Rial</span>
-          </div>
-
-          {/* MongoDB Atlas Sync Pill */}
-          <div className="hidden lg:flex items-center space-x-1.5 bg-white border border-surface-border rounded-xl px-2.5 py-1.5 shadow-xs text-xs font-medium" title="MongoDB Atlas Connected">
-            <span className={`w-2 h-2 rounded-full ${isMongoConnected ? 'bg-[#009B4D]' : 'bg-amber-400'}`} />
-            <span className="text-slate-primary font-semibold text-[11px]">MongoDB</span>
-            <span className="text-[10px] text-brand-green font-semibold uppercase tracking-wider">{isMongoConnected ? 'Live' : 'Syncing'}</span>
-          </div>
-
-          {/* Date Selector Pill */}
           <div className="relative">
             <button
-              onClick={() => {
-                setIsDatePickerOpen(!isDatePickerOpen);
-                setIsProfileOpen(false);
-              }}
-              className="flex items-center space-x-2 bg-white hover:bg-slate-50 border border-surface-border rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-primary shadow-xs transition-colors"
-            >
-              <Calendar className="w-4 h-4 text-brand-blue flex-shrink-0" />
-              <span className="hidden xs:inline whitespace-nowrap">{selectedDate}</span>
-              <span className="xs:hidden">3 Nov</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-muted" />
-            </button>
-
-            {/* Dropdown Menu */}
-            {isDatePickerOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-surface-border py-1.5 z-40 animate-fade-in">
-                <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-muted uppercase tracking-wider border-b border-surface-border/60">
-                  Select Working Date
-                </div>
-                {availableDates.map((date) => (
-                  <button
-                    key={date}
-                    onClick={() => {
-                      setSelectedDate(date);
-                      setIsDatePickerOpen(false);
-                      addToast(`Viewing data for ${date}`);
-                    }}
-                    className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-slate-50 transition-colors ${
-                      selectedDate === date ? 'text-brand-green font-semibold bg-brand-green-light/30' : 'text-slate-primary'
-                    }`}
-                  >
-                    <span>{date}</span>
-                    {selectedDate === date && <Check className="w-3.5 h-3.5 text-brand-green" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Admin Profile Button */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setIsProfileOpen(!isProfileOpen);
-                setIsDatePickerOpen(false);
-              }}
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="w-9 h-9 rounded-full bg-[#1684AA] flex items-center justify-center text-white ring-2 ring-white shadow-xs hover:opacity-95 transition-opacity"
               aria-label="Admin Profile"
             >
@@ -149,4 +74,3 @@ export default function Header() {
     </header>
   );
 }
-

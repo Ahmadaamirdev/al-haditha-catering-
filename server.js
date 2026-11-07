@@ -129,10 +129,14 @@ app.post('/api/data', async (req, res) => {
       if (e && e.id) entryMap.set(e.id, e);
     });
     const mergedEntries = Array.from(entryMap.values());
+    const cleanEntries = mergedEntries.map((e) => {
+      const { _id, ...rest } = e;
+      return rest;
+    });
 
     await mealEntriesCol.deleteMany({});
-    if (mergedEntries.length > 0) {
-      await mealEntriesCol.insertMany(mergedEntries);
+    if (cleanEntries.length > 0) {
+      await mealEntriesCol.insertMany(cleanEntries);
     }
 
     // Smart merge events
@@ -144,9 +148,13 @@ app.post('/api/data', async (req, res) => {
     });
     const mergedEvents = Array.from(eventMap.values());
     const finalEvents = mergedEvents.length > 0 ? mergedEvents : [defaultAlHadithaEvent];
+    const cleanEvents = finalEvents.map((evt) => {
+      const { _id, ...rest } = evt;
+      return rest;
+    });
 
     await eventsCol.deleteMany({});
-    await eventsCol.insertMany(finalEvents);
+    await eventsCol.insertMany(cleanEvents);
 
     const fullState = {
       ...req.body,
