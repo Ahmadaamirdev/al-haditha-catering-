@@ -4,6 +4,7 @@ import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 import { alHadithaEmployees } from './src/data/employeesData.js';
 import { initialMockData } from './src/data/mockData.js';
+import { harmonizeStateMetrics, defaultAlHadithaEvent } from './src/utils/harmonizeEngine.js';
 
 dotenv.config();
 
@@ -50,10 +51,12 @@ app.get('/api/health', async (req, res) => {
   try {
     const database = await connectToMongo();
     const count = await database.collection('employees').countDocuments();
+    const mealCount = await database.collection('mealEntries').countDocuments();
     res.json({
       status: 'ok',
       db: 'connected',
       employeesCount: count,
+      mealEntriesCount: mealCount,
       timestamp: new Date()
     });
   } catch (err) {
@@ -68,8 +71,18 @@ app.get('/api/data', async (req, res) => {
     const stateCol = database.collection('appState');
     let state = await stateCol.findOne({ _id: 'current_state' });
 
+    // Always retrieve latest meal entries from mealEntries collection
+    const mealEntriesCol = database.collection('mealEntries');
+    const dbEntries = await mealEntriesCol.find({}).toArray();
+
+    // Always retrieve latest events from events collection
+    const eventsCol = database.collection('events');
+    let dbEvents = await eventsCol.find({}).toArray();
+    if (dbEvents.length === 0) {
+      dbEvents = [defaultAlHadithaEvent];
+    }
+
     if (!state) {
-      console.log('No current_state found in MongoDB, seeding initial data...');
       state = {
         _id: 'current_state',
         currency: 'OMR',
@@ -81,31 +94,19 @@ app.get('/api/data', async (req, res) => {
         financeOverview: initialMockData.financeOverview,
         mealAllocation: initialMockData.mealAllocation,
         timetable: initialMockData.timetable,
-        events: initialMockData.events || [],
         facilities: initialMockData.facilities,
-        mealEntries: [],
-        updatedAt: new Date(),
+        mealEntries: dbEntries,
+        events: dbEvents,
       };
-      await stateCol.insertOne(state);
+    } else {
+      state.mealEntries = dbEntries.length > 0 ? dbEntries : (state.mealEntries || []);
+      state.events = dbEvents;
     }
 
-    // Ensure events collection is synchronized if state.events is empty
-    if (!state.events || state.events.length === 0) {
-      const dbEvents = await database.collection('events').find({}).toArray();
-      if (dbEvents.length > 0) {
-        state.events = dbEvents;
-      }
-    }
+    // Harmonize all metrics (Junior, Senior, VIP eating counts, Wastage consumed, Finance)
+    const harmonized = harmonizeStateMetrics(state);
 
-    // Ensure mealEntries collection is synchronized if state.mealEntries is empty
-    if (!state.mealEntries || state.mealEntries.length === 0) {
-      const dbEntries = await database.collection('mealEntries').find({}).toArray();
-      if (dbEntries.length > 0) {
-        state.mealEntries = dbEntries;
-      }
-    }
-
-    res.json(state);
+    res.json(harmonized);
   } catch (err) {
     console.error('Error fetching data from MongoDB:', err);
     res.status(500).json({ error: 'Failed to fetch data from MongoDB', details: err.message });
@@ -117,37 +118,53 @@ app.post('/api/data', async (req, res) => {
   try {
     const database = await connectToMongo();
     const stateCol = database.collection('appState');
-    const newState = {
+    const mealEntriesCol = database.collection('mealEntries');
+    const eventsCol = database.collection('events');
+
+    // Smart merge meal entries (never lose entries)
+    let clientEntries = Array.isArray(req.body.mealEntries) ? req.body.mealEntries : [];
+    const dbEntries = await mealEntriesCol.find({}).toArray();
+    const entryMap = new Map();
+    [...dbEntries, ...clientEntries].forEach((e) => {
+      if (e && e.id) entryMap.set(e.id, e);
+    });
+    const mergedEntries = Array.from(entryMap.values());
+
+    await mealEntriesCol.deleteMany({});
+    if (mergedEntries.length > 0) {
+      await mealEntriesCol.insertMany(mergedEntries);
+    }
+
+    // Smart merge events
+    let clientEvents = Array.isArray(req.body.events) ? req.body.events : [];
+    const dbEvents = await eventsCol.find({}).toArray();
+    const eventMap = new Map();
+    [...dbEvents, ...clientEvents].forEach((evt) => {
+      if (evt && evt.id) eventMap.set(evt.id, evt);
+    });
+    const mergedEvents = Array.from(eventMap.values());
+    const finalEvents = mergedEvents.length > 0 ? mergedEvents : [defaultAlHadithaEvent];
+
+    await eventsCol.deleteMany({});
+    await eventsCol.insertMany(finalEvents);
+
+    const fullState = {
       ...req.body,
       _id: 'current_state',
+      mealEntries: mergedEntries,
+      events: finalEvents,
       updatedAt: new Date(),
     };
 
+    const harmonized = harmonizeStateMetrics(fullState);
+
     await stateCol.updateOne(
       { _id: 'current_state' },
-      { $set: newState },
+      { $set: harmonized },
       { upsert: true }
     );
 
-    // Also mirror individual mealEntries if provided
-    if (Array.isArray(req.body.mealEntries)) {
-      const mealEntriesCol = database.collection('mealEntries');
-      await mealEntriesCol.deleteMany({});
-      if (req.body.mealEntries.length > 0) {
-        await mealEntriesCol.insertMany(req.body.mealEntries);
-      }
-    }
-
-    // Mirror events if provided
-    if (Array.isArray(req.body.events)) {
-      const eventsCol = database.collection('events');
-      await eventsCol.deleteMany({});
-      if (req.body.events.length > 0) {
-        await eventsCol.insertMany(req.body.events);
-      }
-    }
-
-    res.json({ success: true, updatedAt: newState.updatedAt });
+    res.json({ success: true, harmonized });
   } catch (err) {
     console.error('Error saving data to MongoDB:', err);
     res.status(500).json({ error: 'Failed to save data to MongoDB', details: err.message });
@@ -159,18 +176,30 @@ app.post('/api/meal-entries', async (req, res) => {
   try {
     const database = await connectToMongo();
     const entry = req.body;
-    await database.collection('mealEntries').insertOne(entry);
+    
+    // Save to mealEntries collection if not already existing
+    const existing = await database.collection('mealEntries').findOne({ id: entry.id });
+    if (!existing) {
+      await database.collection('mealEntries').insertOne(entry);
+    }
 
-    // Update current_state array
-    await database.collection('appState').updateOne(
+    const allEntries = await database.collection('mealEntries').find({}).toArray();
+    const stateCol = database.collection('appState');
+    const state = await stateCol.findOne({ _id: 'current_state' });
+
+    const harmonized = harmonizeStateMetrics({
+      ...(state || {}),
+      mealEntries: allEntries,
+      updatedAt: new Date()
+    });
+
+    await stateCol.updateOne(
       { _id: 'current_state' },
-      { 
-        $push: { mealEntries: { $each: [entry], $position: 0 } },
-        $set: { updatedAt: new Date() }
-      }
+      { $set: harmonized },
+      { upsert: true }
     );
 
-    res.json({ success: true, entry });
+    res.json({ success: true, entry, harmonized });
   } catch (err) {
     console.error('Error logging meal entry to MongoDB:', err);
     res.status(500).json({ error: 'Failed to log meal entry', details: err.message });
@@ -184,15 +213,23 @@ app.delete('/api/meal-entries/:id', async (req, res) => {
     const { id } = req.params;
     await database.collection('mealEntries').deleteOne({ id });
 
-    await database.collection('appState').updateOne(
+    const allEntries = await database.collection('mealEntries').find({}).toArray();
+    const stateCol = database.collection('appState');
+    const state = await stateCol.findOne({ _id: 'current_state' });
+
+    const harmonized = harmonizeStateMetrics({
+      ...(state || {}),
+      mealEntries: allEntries,
+      updatedAt: new Date()
+    });
+
+    await stateCol.updateOne(
       { _id: 'current_state' },
-      { 
-        $pull: { mealEntries: { id } },
-        $set: { updatedAt: new Date() }
-      }
+      { $set: harmonized },
+      { upsert: true }
     );
 
-    res.json({ success: true, deletedId: id });
+    res.json({ success: true, deletedId: id, harmonized });
   } catch (err) {
     console.error('Error deleting meal entry from MongoDB:', err);
     res.status(500).json({ error: 'Failed to delete meal entry', details: err.message });

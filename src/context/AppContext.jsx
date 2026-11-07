@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { initialMockData } from '../data/mockData';
 import { alHadithaEmployees, matchEmployeeByIdAndName } from '../data/employeesData';
 import { getEmployeeRealtimeAllocations, calculateMonthCalendar, MEAL_WINDOWS, isEntryInMonthOrDate } from '../utils/allocationEngine';
@@ -33,6 +33,7 @@ export function AppProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMongoConnected, setIsMongoConnected] = useState(false);
+  const isInitialLoaded = useRef(false);
 
   // Initial load from MongoDB Atlas & merge with local pending state
   useEffect(() => {
@@ -81,31 +82,40 @@ export function AppProvider({ children }) {
             // Harmonize all metrics (Employee Overview eating counts, Wastage consumed, Finance)
             const harmonized = harmonizeStateMetrics(mergedData);
 
-            // Sync harmonized back to MongoDB if new entries or events were added
-            fetch('/api/data', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(harmonized),
-            }).catch(() => {});
-
+            // Update state & mark initial load as completed
             setData(harmonized);
+            isInitialLoaded.current = true;
           }
         }
       } catch (err) {
         console.warn('MongoDB connection offline, using cached data:', err.message);
+        isInitialLoaded.current = true;
       }
     }
+
     fetchFromMongo();
-    return () => { isMounted = false; };
+
+    // Auto-sync poll every 6 seconds and on window focus
+    const interval = setInterval(fetchFromMongo, 6000);
+    window.addEventListener('focus', fetchFromMongo);
+
+    return () => { 
+      isMounted = false; 
+      clearInterval(interval);
+      window.removeEventListener('focus', fetchFromMongo);
+    };
   }, []);
 
-  // Sync to local storage & MongoDB Atlas in real-time
+  // Sync to local storage & MongoDB Atlas in real-time (Guarded by isInitialLoaded)
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
       // Storage quota or private mode fallback
     }
+
+    // Never sync to backend before the initial load from MongoDB has completed!
+    if (!isInitialLoaded.current) return;
 
     const timer = setTimeout(() => {
       fetch('/api/data', {
@@ -477,6 +487,13 @@ export function AppProvider({ children }) {
       };
     });
 
+    // Immediate post to MongoDB Atlas
+    fetch('/api/meal-entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newEntry),
+    }).catch(() => {});
+
     addToast(`Approved: ${emp.name} (${emp.category}) checked in for ${finalMealType}! 1 allocation deducted.`, 'success');
 
     return {
@@ -497,15 +514,28 @@ export function AppProvider({ children }) {
         mealEntries: remainingEntries,
       });
     });
+
+    // Immediate delete in MongoDB Atlas
+    fetch(`/api/meal-entries/${entryId}`, {
+      method: 'DELETE',
+    }).catch(() => {});
+
     addToast('Meal entry removed.', 'info');
   };
 
   const resetAllEntriesToZero = () => {
     setData((prev) => {
-      return harmonizeStateMetrics({
+      const updated = harmonizeStateMetrics({
         ...prev,
         mealEntries: [],
       });
+      // Mirror to MongoDB Atlas
+      fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).catch(() => {});
+      return updated;
     });
     addToast('All meal entries reset to 0. Ready for testing!', 'info');
   };
