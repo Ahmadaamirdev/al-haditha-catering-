@@ -20,9 +20,9 @@ export default function WastageOverview() {
       ];
 
   return (
-    <div className="bg-white rounded-2xl p-5 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow flex flex-col justify-between">
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow flex flex-col justify-between h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2.5">
           <div className="p-1.5 rounded-lg bg-sky-50 text-brand-blue">
             <PieIcon className="w-5 h-5 text-brand-blue" />
@@ -34,7 +34,7 @@ export default function WastageOverview() {
 
         <button
           onClick={() => navigate('/wastage')}
-          className="group flex items-center space-x-1 text-xs font-medium text-slate-secondary hover:text-brand-blue transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-50"
+          className="group flex items-center space-x-1 text-xs font-medium text-slate-secondary hover:text-brand-blue transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
         >
           <span>View Details</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -42,17 +42,17 @@ export default function WastageOverview() {
       </div>
 
       {/* Main Body: Donut Chart + Legend */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center my-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center my-1">
         {/* Donut Chart */}
-        <div className="relative h-40 w-full flex items-center justify-center">
+        <div className="relative h-32 w-full flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={50}
-                outerRadius={68}
+                innerRadius={42}
+                outerRadius={58}
                 startAngle={90}
                 endAngle={-270}
                 paddingAngle={2}
@@ -67,17 +67,17 @@ export default function WastageOverview() {
           </ResponsiveContainer>
           {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-2xl font-bold text-slate-primary tracking-tight">
+            <span className="text-xl font-bold text-slate-primary tracking-tight">
               {wastageOverview.consumptionPercentage}%
             </span>
-            <span className="text-[11px] font-medium text-slate-secondary -mt-0.5">
+            <span className="text-[10px] font-medium text-slate-secondary -mt-0.5">
               Consumed
             </span>
           </div>
         </div>
 
         {/* Legend */}
-        <div className="space-y-3 px-2">
+        <div className="space-y-2.5 px-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 rounded-full bg-brand-green flex-shrink-0" />
@@ -101,13 +101,13 @@ export default function WastageOverview() {
       </div>
 
       {/* Actionable insight badge */}
-      <div className="mt-4 bg-[#E5F5EC] border border-[#009B4D]/30 rounded-xl px-3.5 py-2.5 flex items-start space-x-2.5 text-xs text-slate-800">
+      <div className="mt-3 bg-[#E5F5EC] border border-[#009B4D]/30 rounded-xl px-3 py-2 flex items-start space-x-2 text-xs text-slate-800">
         <Sprout className="w-4 h-4 text-brand-green flex-shrink-0 mt-0.5" />
         <div className="space-y-0.5">
           <span className="font-bold text-brand-green block text-[11px] uppercase tracking-wide">
             2-Week Consistency & +5% Buffer Optimization
           </span>
-          <span className="font-medium text-[12px] text-slate-700 leading-snug block">
+          <span className="font-medium text-[11px] text-slate-700 leading-snug block">
             With consistent 80%–85% 2-week attendance across 100 staff, kitchen prep target is locked at 85 portions (+5% buffer), saving 45 meals/day in OMR.
           </span>
         </div>

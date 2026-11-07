@@ -22,9 +22,9 @@ export default function FinanceOverview() {
   const chartData = fin.budgetVsActual;
 
   return (
-    <div className="bg-white rounded-2xl p-5 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow">
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow h-full flex flex-col justify-between">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2.5">
           <div className="p-1.5 rounded-lg bg-sky-50 text-brand-blue">
             <Wallet className="w-5 h-5 text-brand-blue" />

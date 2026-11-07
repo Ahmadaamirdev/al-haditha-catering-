@@ -9,10 +9,10 @@ export default function AllocationOverview() {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white rounded-2xl p-5 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow flex flex-col justify-between">
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow flex flex-col justify-between h-full">
       <div>
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2.5">
             <div className="p-1.5 rounded-lg bg-sky-50 text-brand-blue">
               <CalendarCheck className="w-5 h-5 text-brand-blue" />

@@ -16,49 +16,54 @@ export default function EmployeeOverview() {
     addToast(`Filter updated to ${opt}`);
   };
 
+  const totalEating = (employeeOverview.junior.eating || 0) + (employeeOverview.senior.eating || 0) + (employeeOverview.vip.eating || 0);
+  const totalStaff = 100;
+  const overallPercentage = Math.round((totalEating / totalStaff) * 100);
+
   return (
-    <div className="bg-white rounded-2xl p-5 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-2.5">
-          <div className="p-1.5 rounded-lg bg-sky-50 text-brand-blue">
-            <Users className="w-5 h-5 text-brand-blue" />
-          </div>
-          <h2 className="text-base sm:text-lg font-semibold text-slate-primary tracking-tight">
-            Employee Meal Overview
-          </h2>
-        </div>
-
-        {/* Filter Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-surface-border bg-white hover:bg-slate-50 text-xs font-medium text-slate-secondary transition-colors"
-          >
-            <span>{filter}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-muted" />
-          </button>
-
-          {isOpen && (
-            <div className="absolute right-0 mt-1.5 w-36 bg-white border border-surface-border rounded-xl shadow-lg py-1 z-30 animate-fade-in">
-              {filters.map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => handleSelectFilter(opt)}
-                  className={`w-full text-left px-3.5 py-1.5 text-xs transition-colors ${
-                    filter === opt ? 'text-brand-green font-semibold bg-brand-green-light/40' : 'text-slate-primary hover:bg-slate-50'
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow h-full flex flex-col justify-between">
+      <div>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-1.5 rounded-lg bg-sky-50 text-brand-blue">
+              <Users className="w-5 h-5 text-brand-blue" />
             </div>
-          )}
-        </div>
-      </div>
+            <h2 className="text-base sm:text-lg font-semibold text-slate-primary tracking-tight">
+              Employee Meal Overview
+            </h2>
+          </div>
 
-      {/* 3 Category Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {/* Filter Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-surface-border bg-white hover:bg-slate-50 text-xs font-medium text-slate-secondary transition-colors cursor-pointer"
+            >
+              <span>{filter}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-muted" />
+            </button>
+
+            {isOpen && (
+              <div className="absolute right-0 mt-1.5 w-36 bg-white border border-surface-border rounded-xl shadow-lg py-1 z-30 animate-fade-in">
+                {filters.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => handleSelectFilter(opt)}
+                    className={`w-full text-left px-3.5 py-1.5 text-xs transition-colors cursor-pointer ${
+                      filter === opt ? 'text-brand-green font-semibold bg-brand-green-light/40' : 'text-slate-primary hover:bg-slate-50'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 3 Category Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
         {/* Junior */}
         <div className="space-y-3">
           <div className="flex items-start space-x-3.5">
@@ -135,6 +140,21 @@ export default function EmployeeOverview() {
               style={{ width: `${employeeOverview.vip.percentage}%` }}
             />
           </div>
+        </div>
+      </div>
+      </div>
+
+      {/* Bottom Summary Bar */}
+      <div className="mt-4 pt-3 border-t border-surface-border flex flex-wrap items-center justify-between gap-2 text-xs text-slate-secondary">
+        <div className="flex items-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-brand-green" />
+          <span>Total Workforce: <strong className="text-slate-primary font-semibold">100 Staff</strong> (40 Jr • 40 Sr • 20 VIP)</span>
+        </div>
+        <div className="flex items-center space-x-1.5">
+          <span>Active Today:</span>
+          <span className="font-bold text-brand-green bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+            {totalEating} Staff ({overallPercentage}%)
+          </span>
         </div>
       </div>
     </div>

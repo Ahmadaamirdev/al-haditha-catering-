@@ -9,13 +9,13 @@ import EventsOverview from '../components/dashboard/EventsOverview';
 
 export default function Dashboard() {
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-4.5 animate-fade-in">
       {/* Row 1: Employee Meal Overview + Wastage Control */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
+        <div className="lg:col-span-7 flex flex-col">
           <EmployeeOverview />
         </div>
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-5 flex flex-col">
           <WastageOverview />
         </div>
       </div>
@@ -26,21 +26,21 @@ export default function Dashboard() {
       </div>
 
       {/* Row 3: Finance Overview + Meal Allocation */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
+        <div className="lg:col-span-7 flex flex-col">
           <FinanceOverview />
         </div>
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-5 flex flex-col">
           <AllocationOverview />
         </div>
       </div>
 
       {/* Row 4: Timetable & Meals + Events */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
+        <div className="lg:col-span-6 flex flex-col">
           <TimetableOverview />
         </div>
-        <div className="lg:col-span-6">
+        <div className="lg:col-span-6 flex flex-col">
           <EventsOverview />
         </div>
       </div>
