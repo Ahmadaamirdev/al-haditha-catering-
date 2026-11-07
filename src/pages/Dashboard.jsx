@@ -25,24 +25,20 @@ export default function Dashboard() {
         <LiveAttendanceOverview />
       </div>
 
-      {/* Row 3: Finance Overview + Meal Allocation */}
+      {/* Row 3: Finance Overview + Meal Allocation & Events */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
         <div className="lg:col-span-7 flex flex-col">
           <FinanceOverview />
         </div>
-        <div className="lg:col-span-5 flex flex-col">
+        <div className="lg:col-span-5 flex flex-col justify-between gap-4 sm:gap-4.5">
           <AllocationOverview />
+          <EventsOverview />
         </div>
       </div>
 
-      {/* Row 4: Timetable & Meals + Events */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-4.5 items-stretch">
-        <div className="lg:col-span-6 flex flex-col">
-          <TimetableOverview />
-        </div>
-        <div className="lg:col-span-6 flex flex-col">
-          <EventsOverview />
-        </div>
+      {/* Row 4: Timetable & Meals (Full Width Single Card) */}
+      <div>
+        <TimetableOverview />
       </div>
     </div>
   );

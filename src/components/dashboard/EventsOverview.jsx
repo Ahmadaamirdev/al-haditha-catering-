@@ -12,21 +12,21 @@ export default function EventsOverview() {
   const primaryEvent = events[0] || null;
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow flex flex-col justify-between h-full">
+    <div className="bg-white rounded-2xl p-4 sm:p-4.5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow flex flex-col justify-between">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2.5">
           <div className="p-1.5 rounded-lg bg-sky-50 text-brand-blue">
             <CalendarDays className="w-5 h-5 text-brand-blue" />
           </div>
-          <h2 className="text-base sm:text-lg font-semibold text-slate-primary tracking-tight">
+          <h2 className="text-base font-semibold text-slate-primary tracking-tight">
             Events
           </h2>
         </div>
 
         <button
           onClick={() => navigate('/events')}
-          className="group flex items-center space-x-1 text-xs font-medium text-slate-secondary hover:text-brand-blue transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-50"
+          className="group flex items-center space-x-1 text-xs font-medium text-slate-secondary hover:text-brand-blue transition-colors px-2 py-1 rounded-lg hover:bg-slate-50"
         >
           <span>View Calendar</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
