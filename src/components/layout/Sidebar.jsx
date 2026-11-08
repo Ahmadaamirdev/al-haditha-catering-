@@ -28,7 +28,6 @@ export default function Sidebar() {
     { name: 'Wastage Control', path: '/wastage', icon: PieChart },
     { name: 'Finance', path: '/finance', icon: Wallet },
     { name: 'Meal Allocation', path: '/allocation', icon: CalendarCheck },
-    { name: 'Timetable & Meals', path: '/timetable', icon: Utensils },
     { name: 'Events', path: '/events', icon: CalendarDays },
   ];
 

@@ -99,7 +99,7 @@ export function harmonizeStateMetrics(state) {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
   const currentMonthStr = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
-  const effectiveMonth = (!state.selectedMonth || state.selectedMonth.includes('2025')) ? currentMonthStr : state.selectedMonth;
+  const effectiveMonth = state.selectedMonth || currentMonthStr;
 
   return {
     ...state,

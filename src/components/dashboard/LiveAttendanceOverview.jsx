@@ -113,7 +113,6 @@ export default function LiveAttendanceOverview() {
                 <th className="px-4 py-2.5">Staff Name</th>
                 <th className="px-4 py-2.5">Category</th>
                 <th className="px-4 py-2.5">Meal Service</th>
-                <th className="px-4 py-2.5">Mess Location</th>
                 <th className="px-4 py-2.5 text-center">Status</th>
                 <th className="px-4 py-2.5 text-right">Action</th>
               </tr>
@@ -141,9 +140,6 @@ export default function LiveAttendanceOverview() {
                   </td>
                   <td className="px-4 py-2.5 font-medium text-slate-primary">
                     {entry.mealType}
-                  </td>
-                  <td className="px-4 py-2.5 text-slate-secondary">
-                    {entry.facility}
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <span className="inline-flex items-center space-x-1 text-[10px] font-semibold text-brand-green bg-brand-green-light px-2 py-0.5 rounded-full">

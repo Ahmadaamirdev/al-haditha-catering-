@@ -1,38 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Wallet, 
-  TrendingUp, 
-  CreditCard, 
-  DollarSign, 
-  Plus, 
   Edit3, 
   User, 
   Users, 
   Gem, 
   ArrowUpRight, 
-  ArrowDownRight,
-  PieChart as PieIcon,
   CheckCircle2,
   Calendar
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Legend, 
-  LineChart, 
-  Line 
-} from 'recharts';
 import { useApp } from '../context/AppContext';
 import { computeCategoryFinance } from '../utils/financeEngine';
 import Modal from '../components/common/Modal';
 
 export default function Finance() {
-  const { data, currency, updateCategoryBudget, addExtraBudget, addToast } = useApp();
+  const { data, currency, updateCategoryBudget, addToast } = useApp();
   const { financeOverview } = data;
   const events = data.events || [];
   const mealEntries = data.mealEntries || [];
@@ -47,20 +29,12 @@ export default function Finance() {
 
   // Modals state
   const [isEditRatesOpen, setIsEditRatesOpen] = useState(false);
-  const [isAddBudgetOpen, setIsAddBudgetOpen] = useState(false);
 
   // Edit rates form
   const [ratesForm, setRatesForm] = useState({
     junior: financeOverview.categoryRates.junior.rate,
     senior: financeOverview.categoryRates.senior.rate,
     vip: financeOverview.categoryRates.vip.rate,
-  });
-
-  // Add budget form
-  const [budgetForm, setBudgetForm] = useState({
-    amount: 5000,
-    category: 'Junior',
-    note: 'Camp workforce surge adjustment for solar expansion project.',
   });
 
   const handleSaveRates = (e) => {
@@ -71,24 +45,8 @@ export default function Finance() {
     setIsEditRatesOpen(false);
   };
 
-  const handleAddBudgetSubmit = (e) => {
-    e.preventDefault();
-    addExtraBudget(budgetForm.amount, budgetForm.category, budgetForm.note);
-    setIsAddBudgetOpen(false);
-  };
-
   // Event expenditure calculation
   const totalEventExpenditure = events.reduce((sum, ev) => sum + (ev.overallBudget || 0), 0);
-
-  // Synced 5-Month chart data ensuring current month reflects real actual expenditure
-  const chartHistory = useMemo(() => {
-    return (financeOverview.monthlyHistory || []).map((m) => {
-      if (m.month === 'Nov') {
-        return { ...m, budget: fin.totalBudget, actual: fin.totalActual };
-      }
-      return m;
-    });
-  }, [financeOverview.monthlyHistory, fin]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -114,14 +72,6 @@ export default function Finance() {
           >
             <Edit3 className="w-4 h-4 text-slate-secondary" />
             <span>Edit Category Rates</span>
-          </button>
-
-          <button
-            onClick={() => setIsAddBudgetOpen(true)}
-            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-brand-green hover:bg-brand-green-hover text-white text-xs font-semibold shadow-pill transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Budget Allocation</span>
           </button>
         </div>
       </div>
@@ -208,7 +158,7 @@ export default function Finance() {
       </div>
 
       {/* Macro Monthly Budget Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card">
           <span className="text-xs font-medium text-slate-secondary">Total Allocated Budget</span>
           <p className="text-2xl font-bold text-slate-primary mt-1">
@@ -238,138 +188,6 @@ export default function Finance() {
           <div className="flex items-center space-x-1 text-xs text-brand-green mt-2 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Healthy Cashflow ({fin.totalBudget > 0 ? ((fin.totalRemaining / fin.totalBudget) * 100).toFixed(1) : 0}%)</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card">
-          <span className="text-xs font-medium text-slate-secondary">Utilization Rate</span>
-          <p className="text-2xl font-bold text-slate-primary mt-1">
-            {fin.utilizationRate}%
-          </p>
-          <div className="h-1.5 w-full bg-slate-100 rounded-full mt-3 overflow-hidden">
-            <div className="h-full bg-brand-green rounded-full" style={{ width: `${Math.min(100, Math.max(fin.utilizationRate, fin.totalActual > 0 ? 1 : 0))}%` }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section: Historical Spending & Budget vs Actual */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Multi-Month Historical Trend */}
-        <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-surface-border shadow-card">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-semibold text-slate-primary">5-Month Budget vs Actual Trend</h3>
-              <p className="text-xs text-slate-secondary">Monthly variance and budget caps</p>
-            </div>
-            <div className="flex items-center space-x-3 text-xs text-slate-secondary">
-              <span className="flex items-center space-x-1">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#1684AA]" />
-                <span>Allocated</span>
-              </span>
-              <span className="flex items-center space-x-1">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#009B4D]" />
-                <span>Actual</span>
-              </span>
-            </div>
-          </div>
-
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartHistory} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="month" tickLine={false} axisLine={{ stroke: '#E2E8F0' }} tick={{ fill: '#64748B', fontSize: 11 }} />
-                <YAxis 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{ fill: '#94A3B8', fontSize: 10 }}
-                  tickFormatter={(v) => `${v / 1000}K`} 
-                />
-                <Tooltip />
-                <Bar dataKey="budget" fill="#1684AA" radius={[4, 4, 0, 0]} maxBarSize={30} name="Budget" />
-                <Bar dataKey="actual" fill="#009B4D" radius={[4, 4, 0, 0]} maxBarSize={30} name="Actual" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Category Breakdown & Status List */}
-        <div className="lg:col-span-5 bg-white p-6 rounded-2xl border border-surface-border shadow-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-semibold text-slate-primary">
-                Category-Wise Spending Status
-              </h3>
-              <span className="text-[10px] font-bold text-brand-green bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Live Synced
-              </span>
-            </div>
-            <p className="text-xs text-slate-secondary mb-4">Current month realized expenditure and remaining liquidity per tier</p>
-
-            <div className="space-y-3.5">
-              {fin.budgetStatus.map((item) => (
-                <div key={item.category} className="p-4 rounded-xl border border-surface-border bg-slate-50/70 hover:bg-slate-50 transition-colors">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-bold text-xs text-slate-primary">{item.name}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                      item.status === 'Healthy' 
-                        ? 'text-brand-green bg-brand-green-light border border-brand-green/20' 
-                        : 'text-rose-700 bg-rose-50 border border-rose-200'
-                    }`}>
-                      {item.status}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs py-1.5 border-t border-b border-slate-200/60 my-1.5">
-                    <div>
-                      <span className="text-[11px] text-slate-500 block">Spent (Realized):</span>
-                      <span className="font-extrabold text-slate-900 text-sm">
-                        {item.spent.toLocaleString()} {currency}
-                      </span>
-                      <span className="text-[10px] text-slate-400 block">
-                        {item.meals} Meals @ {item.rate} {currency}
-                      </span>
-                    </div>
-
-                    <div className="text-right">
-                      <span className="text-[11px] text-slate-500 block">Remaining Liquidity:</span>
-                      <span className="font-extrabold text-brand-green text-sm">
-                        {item.remaining.toLocaleString()} {currency}
-                      </span>
-                      <span className="text-[10px] text-slate-400 block">
-                        Pool: {item.budget.toLocaleString()} {currency}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="pt-1">
-                    <div className="flex justify-between text-[10px] text-slate-400 mb-1">
-                      <span>Spent: {item.utilization}%</span>
-                      <span>Left: {(100 - parseFloat(item.utilization)).toFixed(1)}%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          parseFloat(item.utilization) > 90 ? 'bg-rose-500' : 'bg-brand-green'
-                        }`} 
-                        style={{ width: `${Math.min(100, Math.max(parseFloat(item.utilization), item.spent > 0 ? 3 : 0))}%` }} 
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-5 pt-3.5 border-t border-surface-border flex flex-col gap-1.5 text-xs">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-secondary">Total Realized Category Spent:</span>
-              <span className="font-bold text-slate-primary">{fin.totalActual.toLocaleString()} {currency} / {fin.totalBudget.toLocaleString()} {currency}</span>
-            </div>
-            <div className="flex justify-between items-center text-[11px]">
-              <span className="text-slate-secondary">Special Event Expenditure:</span>
-              <span className="font-semibold text-brand-blue">{totalEventExpenditure.toLocaleString()} {currency}</span>
-            </div>
           </div>
         </div>
       </div>
@@ -502,74 +320,6 @@ export default function Finance() {
               className="px-5 py-2 text-xs font-semibold text-white bg-brand-green hover:bg-brand-green-hover rounded-xl shadow-pill transition-all"
             >
               Update Rates
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Modal: Add Budget Allocation */}
-      <Modal
-        isOpen={isAddBudgetOpen}
-        onClose={() => setIsAddBudgetOpen(false)}
-        title="Add Emergency / Extra Budget"
-        subtitle="Inject supplementary catering funds into category accounts."
-      >
-        <form onSubmit={handleAddBudgetSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-primary mb-1">
-              Allocation Amount ({currency})
-            </label>
-            <input
-              type="number"
-              min="500"
-              step="500"
-              required
-              value={budgetForm.amount}
-              onChange={(e) => setBudgetForm({ ...budgetForm, amount: e.target.value })}
-              className="w-full px-3 py-2 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-primary mb-1">
-              Target Employee Category
-            </label>
-            <select
-              value={budgetForm.category}
-              onChange={(e) => setBudgetForm({ ...budgetForm, category: e.target.value })}
-              className="w-full px-3 py-2 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green"
-            >
-              <option value="Junior">Junior Tier</option>
-              <option value="Senior">Senior Tier</option>
-              <option value="VIP">VIP / Event Fund</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-primary mb-1">
-              Justification Note
-            </label>
-            <textarea
-              rows={3}
-              value={budgetForm.note}
-              onChange={(e) => setBudgetForm({ ...budgetForm, note: e.target.value })}
-              className="w-full px-3 py-2 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green"
-            />
-          </div>
-
-          <div className="pt-4 border-t border-surface-border flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={() => setIsAddBudgetOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-slate-secondary hover:text-slate-primary rounded-xl"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 text-xs font-semibold text-white bg-brand-green hover:bg-brand-green-hover rounded-xl shadow-pill transition-all"
-            >
-              Confirm Allocation
             </button>
           </div>
         </form>

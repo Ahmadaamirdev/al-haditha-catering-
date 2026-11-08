@@ -148,17 +148,18 @@ export default function EmployeeEntryPanel() {
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#009B4D] via-[#1684AA] to-[#009B4D]" />
 
             {/* Card Header: Logo side-by-side with Employee Meal Check-In */}
-            <div className="flex items-center justify-center space-x-3 pb-5 border-b border-slate-100">
+            <div className="flex items-center justify-center gap-3.5 pb-5 border-b border-slate-100">
               <img 
                 src={logoAsset} 
                 alt="Al Haditha Energy" 
                 className="h-10 sm:h-11 w-auto object-contain flex-shrink-0" 
               />
-              <div className="border-l border-slate-200 pl-3">
+              <div className="h-9 w-px bg-slate-200 shrink-0" />
+              <div className="flex flex-col justify-center text-left">
                 <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-tight">
                   Employee Meal Check-In
                 </h2>
-                <span className="text-[11px] font-semibold text-brand-green uppercase tracking-wide block">
+                <span className="text-[11px] font-semibold text-brand-green uppercase tracking-wide block mt-0.5">
                   Al-Haditha Petroleum Services
                 </span>
               </div>

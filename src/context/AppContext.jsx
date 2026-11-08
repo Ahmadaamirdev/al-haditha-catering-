@@ -54,6 +54,17 @@ export function AppProvider({ children }) {
               try {
                 const localData = JSON.parse(localSaved);
                 
+                // Preserve local selectedMonth and mealAllocation if user selected or changed them locally
+                if (localData.selectedMonth) {
+                  mergedData.selectedMonth = localData.selectedMonth;
+                }
+                if (localData.mealAllocation) {
+                  mergedData.mealAllocation = {
+                    ...mergedData.mealAllocation,
+                    ...localData.mealAllocation,
+                  };
+                }
+
                 // 1. Merge Meal Entries
                 const localEntries = localData.mealEntries || [];
                 const mongoEntries = mongoData.mealEntries || [];
@@ -301,7 +312,7 @@ export function AppProvider({ children }) {
         };
       });
 
-      return {
+      const updated = {
         ...prev,
         selectedMonth: month,
         mealAllocation: {
@@ -310,6 +321,19 @@ export function AppProvider({ children }) {
           categories: updatedCategories,
         },
       };
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+
+      // Immediately sync to MongoDB Atlas so Vercel and all clients stay synced
+      fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).catch((err) => console.warn('Sync failed:', err));
+
+      return updated;
     });
 
     if (!silent) {
