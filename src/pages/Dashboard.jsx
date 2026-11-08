@@ -3,7 +3,6 @@ import EmployeeOverview from '../components/dashboard/EmployeeOverview';
 import WastageOverview from '../components/dashboard/WastageOverview';
 import LiveAttendanceOverview from '../components/dashboard/LiveAttendanceOverview';
 import FinanceOverview from '../components/dashboard/FinanceOverview';
-import TimetableOverview from '../components/dashboard/TimetableOverview';
 import EventsOverview from '../components/dashboard/EventsOverview';
 
 export default function Dashboard() {
@@ -32,11 +31,6 @@ export default function Dashboard() {
         <div className="lg:col-span-5 flex flex-col">
           <EventsOverview />
         </div>
-      </div>
-
-      {/* Row 4: Timetable & Meals (Full Width Single Card) */}
-      <div>
-        <TimetableOverview />
       </div>
     </div>
   );

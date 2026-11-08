@@ -9,7 +9,7 @@ export const initialMockData = {
   // 100 Employees Master Feed (40 Junior, 40 Senior, 20 VIP)
   employees: alHadithaEmployees,
 
-  // Employee Meal Overview (100 Employees: 40 Junior, 40 Senior, 20 VIP) - Starting at 0 for live testing
+  // Employee Meal Overview (80 Employees: 40 Junior, 40 Senior) - Starting at 0 for live testing
   employeeOverview: {
     junior: {
       category: 'Junior',
@@ -26,14 +26,6 @@ export const initialMockData = {
       percentage: 0,
       color: '#1684AA',
       bgColor: '#E7F2F9',
-    },
-    vip: {
-      category: 'VIP',
-      total: 20,
-      eating: 0,
-      percentage: 0,
-      color: '#009B4D',
-      bgColor: '#E5F5EC',
     },
   },
 
@@ -93,7 +85,7 @@ export const initialMockData = {
     ]
   },
 
-  // Meal Allocation Overview (100 Employees: 40 Jr, 40 Sr, 20 VIP) - Starting at 0 consumed
+  // Meal Allocation Overview (80 Employees: 40 Jr, 40 Sr) - Starting at 0 consumed
   mealAllocation: {
     workingDays: 22,
     offDaysNote: 'Fri & Sat Off',
@@ -101,7 +93,6 @@ export const initialMockData = {
     categories: [
       { category: 'Junior', color: '#009B4D', dailyAllocation: '3 Meals / Day', remainingMonth: '66 Meals', totalEmployees: 40, monthlyCredits: 2640, consumedCredits: 0, remainingCredits: 2640 },
       { category: 'Senior', color: '#1684AA', dailyAllocation: '3 Meals / Day', remainingMonth: '66 Meals', totalEmployees: 40, monthlyCredits: 2640, consumedCredits: 0, remainingCredits: 2640 },
-      { category: 'VIP', color: '#009B4D', dailyAllocation: 'Event-based / On Demand', remainingMonth: 'Flexible', totalEmployees: 20, monthlyCredits: 1320, consumedCredits: 0, remainingCredits: 1320 },
     ]
   },
 

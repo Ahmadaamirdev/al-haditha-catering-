@@ -14,8 +14,11 @@ export function AppProvider({ children }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (!parsed.employees || parsed.employees.length !== 100) {
-          parsed.employees = alHadithaEmployees;
+        if (parsed.employees) {
+          parsed.employees = parsed.employees.filter((e) => e.category !== 'VIP');
+        }
+        if (parsed.mealEntries) {
+          parsed.mealEntries = parsed.mealEntries.filter((e) => (e.category || '').toUpperCase() !== 'VIP');
         }
         return harmonizeStateMetrics(parsed);
       }
@@ -49,6 +52,10 @@ export function AppProvider({ children }) {
             // Merge entries & events from both MongoDB and localStorage
             const localSaved = localStorage.getItem(STORAGE_KEY);
             let mergedData = { ...mongoData };
+            if (mergedData.employees) {
+              mergedData.employees = mergedData.employees.filter((e) => e.category !== 'VIP');
+              if (mergedData.employees.length === 0) mergedData.employees = alHadithaEmployees;
+            }
 
             if (localSaved) {
               try {
@@ -65,12 +72,16 @@ export function AppProvider({ children }) {
                   };
                 }
 
-                // 1. Merge Meal Entries
-                const localEntries = localData.mealEntries || [];
-                const mongoEntries = mongoData.mealEntries || [];
+                // 1. Merge Meal Entries (strictly excluding any VIP test entries)
+                const localEntries = (localData.mealEntries || []).filter(
+                  (e) => (e.category || '').toUpperCase() !== 'VIP'
+                );
+                const mongoEntries = (mongoData.mealEntries || []).filter(
+                  (e) => (e.category || '').toUpperCase() !== 'VIP'
+                );
                 const entryMap = new Map();
                 [...localEntries, ...mongoEntries].forEach((e) => {
-                  if (e && e.id) entryMap.set(e.id, e);
+                  if (e && e.id && (e.category || '').toUpperCase() !== 'VIP') entryMap.set(e.id, e);
                 });
                 mergedData.mealEntries = Array.from(entryMap.values());
 

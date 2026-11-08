@@ -57,8 +57,8 @@ export default function EmployeeOverview() {
           </div>
         </div>
 
-        {/* 3 Category Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+        {/* Category Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         {/* Junior */}
         <div className="space-y-3">
           <div className="flex items-start space-x-3.5">
@@ -107,32 +107,6 @@ export default function EmployeeOverview() {
             <div
               className="h-full bg-brand-blue rounded-full transition-all duration-500"
               style={{ width: `${employeeOverview.senior.percentage}%` }}
-            />
-          </div>
-        </div>
-
-        {/* VIP */}
-        <div className="space-y-3">
-          <div className="flex items-start space-x-3.5">
-            <div className="w-11 h-11 rounded-full bg-brand-green-light flex items-center justify-center text-brand-green flex-shrink-0">
-              <Gem className="w-5 h-5 text-brand-green" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-slate-secondary">VIP</span>
-              <p className="text-2xl font-bold text-slate-primary tracking-tight leading-tight mt-0.5">
-                {employeeOverview.vip.total.toLocaleString()}
-              </p>
-              <p className="text-xs text-slate-secondary mt-1">
-                Eating: <span className="font-medium text-slate-primary">{employeeOverview.vip.eating.toLocaleString()}</span>{' '}
-                <span className="text-slate-muted">({employeeOverview.vip.percentage}%)</span>
-              </p>
-            </div>
-          </div>
-          {/* Progress bar */}
-          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-brand-green rounded-full transition-all duration-500"
-              style={{ width: `${employeeOverview.vip.percentage}%` }}
             />
           </div>
         </div>

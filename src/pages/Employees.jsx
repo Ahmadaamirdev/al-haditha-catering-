@@ -53,7 +53,6 @@ export default function Employees() {
   // Category counts
   const juniorCount = employees.filter((e) => e.category === 'Junior').length;
   const seniorCount = employees.filter((e) => e.category === 'Senior').length;
-  const vipCount = employees.filter((e) => e.category === 'VIP').length;
 
   // Auto-suggest next ID when opening modal
   const handleOpenAddModal = () => {
@@ -130,7 +129,7 @@ export default function Employees() {
             Al-Haditha Employees Management
           </h1>
           <p className="text-xs sm:text-sm text-slate-secondary mt-1">
-            Manage company personnel, filter by tier category (Junior, Senior, VIP), and add or remove staff records.
+            Manage company personnel, filter by tier category (Junior, Senior), and add or remove staff records.
           </p>
         </div>
 
@@ -143,8 +142,8 @@ export default function Employees() {
         </button>
       </div>
 
-      {/* 4 Summary Cards (Total, Junior, Senior, VIP) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Summary Cards (Total, Junior, Senior) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Workforce */}
         <div 
           onClick={() => setSelectedCategory('All')}
@@ -213,29 +212,6 @@ export default function Employees() {
             Engineers & Supervisors
           </span>
         </div>
-
-        {/* VIP */}
-        <div 
-          onClick={() => setSelectedCategory('VIP')}
-          className={`p-5 rounded-2xl border transition-all cursor-pointer ${
-            selectedCategory === 'VIP'
-              ? 'bg-purple-900 text-white border-purple-900 shadow-md ring-2 ring-purple-900/20'
-              : 'bg-white text-slate-primary border-surface-border shadow-card hover:border-purple-300'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-semibold uppercase tracking-wider ${selectedCategory === 'VIP' ? 'text-purple-200' : 'text-slate-secondary'}`}>
-              VIP Category
-            </span>
-            <div className={`p-2 rounded-xl ${selectedCategory === 'VIP' ? 'bg-white/15 text-white' : 'bg-purple-50 text-purple-700'}`}>
-              <Gem className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold mt-2">{vipCount}</p>
-          <span className={`text-[11px] font-medium ${selectedCategory === 'VIP' ? 'text-purple-200' : 'text-slate-secondary'}`}>
-            Executive & Client Delegation
-          </span>
-        </div>
       </div>
 
       {/* Main Table Container */}
@@ -250,7 +226,6 @@ export default function Employees() {
               { label: 'All', count: employees.length },
               { label: 'Junior', count: juniorCount },
               { label: 'Senior', count: seniorCount },
-              { label: 'VIP', count: vipCount },
             ].map((tab) => (
               <button
                 key={tab.label}
@@ -469,16 +444,15 @@ export default function Employees() {
             />
           </div>
 
-          {/* Category Selector (Junior / Senior / VIP) */}
+          {/* Category Selector (Junior / Senior) */}
           <div>
             <label className="block text-xs font-semibold text-slate-primary mb-1">
               Entitlement Category <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {[
-                { name: 'Junior', desc: '40 tier', color: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
-                { name: 'Senior', desc: '40 tier', color: 'border-sky-300 bg-sky-50 text-sky-900' },
-                { name: 'VIP', desc: '20 tier', color: 'border-purple-300 bg-purple-50 text-purple-900' },
+                { name: 'Junior', desc: 'Field & Operational Staff', color: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
+                { name: 'Senior', desc: 'Engineers & Supervisors', color: 'border-sky-300 bg-sky-50 text-sky-900' },
               ].map((cat) => (
                 <button
                   type="button"

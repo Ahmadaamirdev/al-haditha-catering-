@@ -73,7 +73,8 @@ app.get('/api/data', async (req, res) => {
 
     // Always retrieve latest meal entries from mealEntries collection
     const mealEntriesCol = database.collection('mealEntries');
-    const dbEntries = await mealEntriesCol.find({}).toArray();
+    const rawDbEntries = await mealEntriesCol.find({}).toArray();
+    const dbEntries = rawDbEntries.filter((e) => (e.category || '').toUpperCase() !== 'VIP');
 
     // Always retrieve latest events from events collection
     const eventsCol = database.collection('events');
@@ -128,7 +129,9 @@ app.post('/api/data', async (req, res) => {
     [...dbEntries, ...clientEntries].forEach((e) => {
       if (e && e.id) entryMap.set(e.id, e);
     });
-    const mergedEntries = Array.from(entryMap.values());
+    const mergedEntries = Array.from(entryMap.values()).filter(
+      (e) => (e.category || '').toUpperCase() !== 'VIP'
+    );
     const cleanEntries = mergedEntries.map((e) => {
       const { _id, ...rest } = e;
       return rest;

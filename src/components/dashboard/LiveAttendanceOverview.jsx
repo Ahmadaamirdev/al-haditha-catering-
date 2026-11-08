@@ -71,7 +71,7 @@ export default function LiveAttendanceOverview() {
           <div>
             <h3 className="text-sm font-bold text-slate-primary">0 Meals Recorded Today (Clean Testing State)</h3>
             <p className="text-xs text-slate-secondary mt-0.5 max-w-md mx-auto">
-              All 100 employees (40 Junior, 40 Senior, 20 VIP) are loaded with 0 entries. Click a button below to test check-in:
+              All 80 employees (40 Junior, 40 Senior) are loaded with 0 entries. Click a button below to test check-in:
             </p>
           </div>
 
@@ -91,14 +91,6 @@ export default function LiveAttendanceOverview() {
             >
               <PlusCircle className="w-3.5 h-3.5 text-sky-700" />
               <span>+ Check In Senior (AHP-1041)</span>
-            </button>
-
-            <button
-              onClick={() => handleQuickAdd('AHP-1081', 'Eng. Abdullah Al-Haditha', 'VIP')}
-              className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-900 text-xs font-semibold transition-colors"
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-purple-700" />
-              <span>+ Check In VIP (AHP-1081)</span>
             </button>
           </div>
         </div>

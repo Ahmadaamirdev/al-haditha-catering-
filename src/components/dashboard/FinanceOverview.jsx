@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, ArrowRight, User, Users, Gem } from 'lucide-react';
+import { Wallet, ArrowRight, User, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { useApp } from '../../context/AppContext';
 import { computeCategoryFinance } from '../../utils/financeEngine';
@@ -43,8 +43,8 @@ export default function FinanceOverview() {
         </button>
       </div>
 
-      {/* Top 3 Category Rate Badges */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      {/* Category Rate Badges */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         {/* Junior Budget */}
         <div className="bg-[#E5F5EC] border border-[#009B4D]/10 rounded-xl p-3 flex items-center space-x-3">
           <div className="w-8 h-8 rounded-lg bg-white/80 flex items-center justify-center text-brand-green flex-shrink-0 shadow-xs">
@@ -67,19 +67,6 @@ export default function FinanceOverview() {
             <span className="block text-[11px] font-medium text-brand-blue">Senior Budget</span>
             <span className="text-sm font-bold text-slate-primary">
               {financeOverview.categoryRates.senior.rate} {currency} / Person
-            </span>
-          </div>
-        </div>
-
-        {/* VIP Budget */}
-        <div className="bg-[#E5F5EC] border border-[#009B4D]/10 rounded-xl p-3 flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-white/80 flex items-center justify-center text-brand-green flex-shrink-0 shadow-xs">
-            <Gem className="w-4 h-4 text-brand-green" />
-          </div>
-          <div>
-            <span className="block text-[11px] font-medium text-brand-green">VIP Budget</span>
-            <span className="text-sm font-bold text-slate-primary">
-              {financeOverview.categoryRates.vip.rate} {currency} / Person
             </span>
           </div>
         </div>
@@ -137,7 +124,7 @@ export default function FinanceOverview() {
             </span>
           </div>
 
-          {fin.budgetStatus.map((item) => (
+          {fin.budgetStatus.filter((item) => item.category?.toUpperCase() !== 'VIP').map((item) => (
             <div key={item.category} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/70">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-slate-primary">

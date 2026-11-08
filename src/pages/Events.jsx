@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   CalendarDays, 
   Plus, 
@@ -20,59 +21,56 @@ export default function Events() {
   const events = data.events || [];
   const allEmployees = data.employees || [];
 
+  const location = useLocation();
+  const highlightId = location.state?.highlightEventId;
+
   const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming', 'past', 'calendar'
   const [expandedRosters, setExpandedRosters] = useState({});
+
+  useEffect(() => {
+    if (highlightId) {
+      setActiveTab('upcoming');
+      setTimeout(() => {
+        const el = document.getElementById(`event-${highlightId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 150);
+    }
+  }, [highlightId]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEventId, setEditingEventId] = useState(null);
 
-  // Modal Filter & Employee Selection State
-  const [modalCategory, setModalCategory] = useState('All');
-  const [empSearch, setEmpSearch] = useState('');
-  const [selectedEmpIds, setSelectedEmpIds] = useState([]);
-
   // Form State
   const [formData, setFormData] = useState({
     title: '',
-    fullDate: '2025-11-20',
+    fullDate: '2026-11-20',
     time: '18:00 - 21:00',
     description: '',
-    invitedCount: 0,
-    expectedCount: 0,
-    perPersonBudget: 20,
+    expectedCount: 10,
+    perPersonBudget: 25,
+    overallBudget: 250,
     menuChanged: false,
-    menuDetails: 'Special VIP Buffet: Lamb Ouzi, Kingfish Steaks, Seafood Saffron Rice, Royal Salad Bar, Premium Arabic Sweets and Mocktails.',
-    category: 'VIP',
+    menuDetails: 'Buffet with Grilled Meats, Rice, Fresh Salads, Traditional Sweets and Beverages.',
+    category: 'Corporate / Special Banquet',
     location: 'Main Camp Mess Hall',
   });
 
-  // Calculate employee category counts for quick pills
-  const categoryCounts = useMemo(() => {
-    return {
-      All: allEmployees.length,
-      VIP: allEmployees.filter((e) => e.category === 'VIP').length,
-      Senior: allEmployees.filter((e) => e.category === 'Senior').length,
-      Junior: allEmployees.filter((e) => e.category === 'Junior').length,
-    };
-  }, [allEmployees]);
-
   const handleOpenAdd = () => {
     setEditingEventId(null);
-    setModalCategory('VIP');
-    setEmpSearch('');
-    setSelectedEmpIds([]);
     setFormData({
       title: '',
-      fullDate: '2025-11-20',
+      fullDate: '2026-11-20',
       time: '18:00 - 21:00',
       description: '',
-      invitedCount: 0,
-      expectedCount: 0,
-      perPersonBudget: 20,
+      expectedCount: 10,
+      perPersonBudget: 25,
+      overallBudget: 250,
       menuChanged: false,
       menuDetails: 'Buffet with Grilled Meats, Rice, Fresh Salads, Traditional Sweets and Beverages.',
-      category: 'VIP',
+      category: 'Corporate / Special Banquet',
       location: 'Main Camp Mess Hall',
     });
     setIsModalOpen(true);
@@ -80,90 +78,22 @@ export default function Events() {
 
   const handleOpenEdit = (evt) => {
     setEditingEventId(evt.id);
-    const existingIds = (evt.invitedEmployees && evt.invitedEmployees.map((e) => e.id)) || evt.invitedEmployeeIds || [];
-    setSelectedEmpIds(existingIds);
-    setModalCategory(evt.category && ['VIP', 'Senior', 'Junior'].includes(evt.category) ? evt.category : 'All');
-    setEmpSearch('');
+    const count = evt.expectedCount || evt.invitedCount || 10;
+    const rate = evt.perPersonBudget || 25;
     setFormData({
       title: evt.title || '',
-      fullDate: evt.fullDate || `2025-11-${evt.day}`,
+      fullDate: evt.fullDate || `2026-11-${evt.day || '20'}`,
       time: evt.time || '18:00 - 21:00',
       description: evt.description || '',
-      invitedCount: evt.invitedCount || existingIds.length || 0,
-      expectedCount: evt.expectedCount || existingIds.length || 0,
-      perPersonBudget: evt.perPersonBudget || 20,
+      expectedCount: count,
+      perPersonBudget: rate,
+      overallBudget: evt.overallBudget || (count * rate),
       menuChanged: evt.menuChanged || false,
       menuDetails: evt.menuDetails || '',
-      category: evt.category || 'VIP',
+      category: evt.category || 'Special Event',
       location: evt.location || 'Main Camp Mess Hall',
     });
     setIsModalOpen(true);
-  };
-
-  const handleCategorySelect = (cat) => {
-    setModalCategory(cat);
-    const catLabel = cat === 'All' ? 'All Staff' : cat;
-    let rate = formData.perPersonBudget;
-    if (cat === 'VIP') rate = 20;
-    else if (cat === 'Senior') rate = 10;
-    else if (cat === 'Junior') rate = 5;
-
-    setFormData((prev) => ({
-      ...prev,
-      category: catLabel,
-      perPersonBudget: rate,
-    }));
-  };
-
-  // Filter employees for the modal picker
-  const filteredEmployees = useMemo(() => {
-    return allEmployees.filter((emp) => {
-      const matchCat = modalCategory === 'All' || emp.category === modalCategory;
-      if (!matchCat) return false;
-      if (!empSearch.trim()) return true;
-      const q = empSearch.toLowerCase();
-      return (
-        emp.name.toLowerCase().includes(q) ||
-        emp.id.toLowerCase().includes(q) ||
-        (emp.designation && emp.designation.toLowerCase().includes(q)) ||
-        (emp.department && emp.department.toLowerCase().includes(q))
-      );
-    });
-  }, [allEmployees, modalCategory, empSearch]);
-
-  const toggleEmployee = (empId) => {
-    setSelectedEmpIds((prev) => {
-      const next = prev.includes(empId) ? prev.filter((id) => id !== empId) : [...prev, empId];
-      setFormData((f) => ({
-        ...f,
-        invitedCount: next.length,
-        expectedCount: next.length,
-      }));
-      return next;
-    });
-  };
-
-  const handleSelectAllFiltered = () => {
-    const filteredIds = filteredEmployees.map((e) => e.id);
-    setSelectedEmpIds((prev) => {
-      const set = new Set([...prev, ...filteredIds]);
-      const next = Array.from(set);
-      setFormData((f) => ({
-        ...f,
-        invitedCount: next.length,
-        expectedCount: next.length,
-      }));
-      return next;
-    });
-  };
-
-  const handleClearSelected = () => {
-    setSelectedEmpIds([]);
-    setFormData((f) => ({
-      ...f,
-      invitedCount: 0,
-      expectedCount: 0,
-    }));
   };
 
   const handleSubmit = (e) => {
@@ -172,31 +102,19 @@ export default function Events() {
     const day = isNaN(dateObj.getDate()) ? '20' : dateObj.getDate().toString();
     const month = isNaN(dateObj.getTime()) ? 'Nov' : dateObj.toLocaleString('default', { month: 'short' });
 
-    const invitedEmployees = allEmployees
-      .filter((emp) => selectedEmpIds.includes(emp.id))
-      .map((emp) => ({
-        id: emp.id,
-        name: emp.name,
-        category: emp.category,
-        designation: emp.designation,
-        department: emp.department,
-      }));
-
-    const headcount = Number(formData.expectedCount || selectedEmpIds.length || formData.invitedCount || 1);
+    const headcount = Number(formData.expectedCount || 1);
     const rate = Number(formData.perPersonBudget || 0);
-    const overallBudget = headcount * rate;
+    const overallBudget = Number(formData.overallBudget || (headcount * rate));
 
     const payload = {
       ...formData,
       day,
       month,
-      invitedCount: Number(formData.invitedCount || selectedEmpIds.length || headcount),
       expectedCount: headcount,
+      invitedCount: headcount,
       perPersonBudget: rate,
       overallBudget,
-      invitedEmployees,
-      invitedEmployeeIds: selectedEmpIds,
-      category: formData.category || (modalCategory === 'All' ? 'All Staff' : modalCategory),
+      category: formData.category || 'Special Event',
     };
 
     if (editingEventId) {
@@ -306,7 +224,10 @@ export default function Events() {
               return (
                 <div
                   key={evt.id}
-                  className="bg-white rounded-2xl p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all flex flex-col justify-between"
+                  id={`event-${evt.id}`}
+                  className={`bg-white rounded-2xl p-6 border shadow-card hover:shadow-card-hover transition-all flex flex-col justify-between ${
+                    highlightId === evt.id ? 'border-brand-green ring-2 ring-brand-green/30 bg-emerald-50/20' : 'border-surface-border'
+                  }`}
                 >
                   <div>
                     {/* Event Header */}
@@ -364,70 +285,29 @@ export default function Events() {
                       <div className="flex items-center justify-between">
                         <span className="flex items-center space-x-1.5 text-slate-secondary">
                           <Users className="w-3.5 h-3.5 text-slate-muted" />
-                          <span>Headcount Entitlement:</span>
+                          <span>Guest Attendance:</span>
                         </span>
                         <span className="font-semibold text-slate-primary">
-                          {evt.expectedCount} Expected &nbsp;|&nbsp; {evt.invitedCount || evt.expectedCount} Invited
+                          {evt.expectedCount || evt.invitedCount || 0} Guests
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between">
                         <span className="flex items-center space-x-1.5 text-slate-secondary">
                           <Wallet className="w-3.5 h-3.5 text-slate-muted" />
-                          <span>Dedicated Budget:</span>
+                          <span>Event Catering Budget:</span>
                         </span>
-                        <span className="font-bold text-slate-primary">
+                        <span className="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
                           {(evt.overallBudget || 0).toLocaleString()} {currency}{' '}
-                          <span className="font-normal text-slate-muted">({evt.perPersonBudget} {currency}/head)</span>
+                          <span className="font-normal text-slate-500 text-[11px]">({evt.perPersonBudget} {currency}/guest)</span>
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-secondary">Target Tier:</span>
-                        <span className="font-semibold text-brand-blue">{evt.category}</span>
+                        <span className="text-slate-secondary">Venue:</span>
+                        <span className="font-semibold text-slate-primary">{evt.location}</span>
                       </div>
                     </div>
-
-                    {/* Invited Staff Preview */}
-                    {invitedList.length > 0 && (
-                      <div className="mb-4 bg-white border border-surface-border rounded-xl p-3 text-xs">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-slate-primary text-[11px] flex items-center space-x-1.5">
-                            <UserCheck className="w-3.5 h-3.5 text-brand-green" />
-                            <span>Invited Personnel ({invitedList.length})</span>
-                          </span>
-                          {invitedList.length > 4 && (
-                            <button
-                              type="button"
-                              onClick={() => setExpandedRosters((prev) => ({ ...prev, [evt.id]: !prev[evt.id] }))}
-                              className="text-[10px] font-semibold text-brand-blue hover:underline"
-                            >
-                              {isRosterExpanded ? 'Collapse' : `View All (${invitedList.length})`}
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="flex flex-wrap gap-1.5">
-                          {(isRosterExpanded ? invitedList : invitedList.slice(0, 4)).map((emp) => (
-                            <span
-                              key={emp.id}
-                              className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-[11px]"
-                            >
-                              <span className="font-medium">{emp.name}</span>
-                              <span className="text-[9px] text-slate-400">({emp.category})</span>
-                            </span>
-                          ))}
-                          {!isRosterExpanded && invitedList.length > 4 && (
-                            <span
-                              onClick={() => setExpandedRosters((prev) => ({ ...prev, [evt.id]: true }))}
-                              className="px-2 py-0.5 rounded-lg bg-brand-green-light text-brand-green text-[11px] font-semibold cursor-pointer hover:bg-brand-green/20"
-                            >
-                              +{invitedList.length - 4} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Event Description & Menu */}
                     {evt.description && (
@@ -624,184 +504,101 @@ export default function Events() {
             </div>
           </div>
 
-          {/* Section 2: Target Category & Employee Selector */}
-          <div className="bg-slate-50/80 rounded-2xl p-4 border border-surface-border space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          {/* Section 2: Guest Attendance & Event Catering Budget */}
+          <div className="bg-slate-50/80 rounded-2xl p-4.5 border border-surface-border space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-primary">
+                Guest Attendance & Catering Budget
+              </label>
+              <p className="text-[11px] text-slate-secondary">
+                Enter the number of guests attending and specify the per-guest rate or total event catering budget.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-primary">
-                  Select Category & Invite Employees
+                <label className="block text-xs font-semibold text-slate-primary mb-1">
+                  Number of Guests <span className="text-rose-500">*</span>
                 </label>
-                <p className="text-[11px] text-slate-secondary">
-                  Choose a category to filter staff, then check off the employees you want to invite.
-                </p>
-              </div>
-
-              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-brand-green-light text-brand-green border border-brand-green/20 self-start sm:self-auto">
-                {selectedEmpIds.length} Staff Selected
-              </span>
-            </div>
-
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {[
-                { key: 'All', label: 'All Staff', count: categoryCounts.All },
-                { key: 'VIP', label: 'VIP Category', count: categoryCounts.VIP },
-                { key: 'Senior', label: 'Senior Staff', count: categoryCounts.Senior },
-                { key: 'Junior', label: 'Junior Staff', count: categoryCounts.Junior },
-              ].map((c) => (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => handleCategorySelect(c.key)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    modalCategory === c.key
-                      ? 'bg-brand-green text-white shadow-pill'
-                      : 'bg-white border border-surface-border text-slate-secondary hover:text-slate-primary'
-                  }`}
-                >
-                  {c.label} ({c.count})
-                </button>
-              ))}
-            </div>
-
-            {/* Search Bar & Quick Multi-Select Actions */}
-            <div className="flex flex-col sm:flex-row items-center gap-2">
-              <div className="relative flex-1 w-full">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search staff by name, ID, or job title..."
-                  value={empSearch}
-                  onChange={(e) => setEmpSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-surface-border rounded-xl focus:outline-none focus:border-brand-green"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2 self-end sm:self-auto flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={handleSelectAllFiltered}
-                  className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-white border border-surface-border hover:bg-slate-100 text-slate-primary transition-colors"
-                >
-                  Invite All ({filteredEmployees.length})
-                </button>
-                {selectedEmpIds.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearSelected}
-                    className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Scrollable Employee Checklist */}
-            <div className="max-h-48 overflow-y-auto rounded-xl border border-surface-border bg-white divide-y divide-slate-100 shadow-2xs">
-              {filteredEmployees.length === 0 ? (
-                <div className="p-4 text-center text-xs text-slate-muted">
-                  No employees matched this filter.
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={formData.expectedCount}
+                    onChange={(e) => {
+                      const guests = Number(e.target.value);
+                      const rate = Number(formData.perPersonBudget || 0);
+                      setFormData({ 
+                        ...formData, 
+                        expectedCount: guests,
+                        overallBudget: guests * rate
+                      });
+                    }}
+                    className="w-full px-3.5 py-2.5 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green bg-white shadow-2xs font-semibold"
+                    placeholder="e.g. 15"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-slate-400 pointer-events-none">Guests</span>
                 </div>
-              ) : (
-                filteredEmployees.map((emp) => {
-                  const isChecked = selectedEmpIds.includes(emp.id);
-                  return (
-                    <div
-                      key={emp.id}
-                      onClick={() => toggleEmployee(emp.id)}
-                      className={`flex items-center justify-between px-3.5 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors ${
-                        isChecked ? 'bg-brand-green-light/20' : ''
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3 min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {}}
-                          className="w-4 h-4 rounded text-brand-green focus:ring-brand-green cursor-pointer"
-                        />
-                        <div className="truncate">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs font-semibold text-slate-primary truncate">
-                              {emp.name}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              {emp.id}
-                            </span>
-                          </div>
-                          <span className="text-[11px] text-slate-secondary truncate block">
-                            {emp.designation} &bull; {emp.department}
-                          </span>
-                        </div>
-                      </div>
+              </div>
 
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                          emp.category === 'VIP'
-                            ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                            : emp.category === 'Senior'
-                            ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        }`}
-                      >
-                        {emp.category}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
+              <div>
+                <label className="block text-xs font-semibold text-slate-primary mb-1">
+                  Per-Guest Rate ({currency}) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={formData.perPersonBudget}
+                    onChange={(e) => {
+                      const rate = Number(e.target.value);
+                      const guests = Number(formData.expectedCount || 0);
+                      setFormData({ 
+                        ...formData, 
+                        perPersonBudget: rate,
+                        overallBudget: guests * rate
+                      });
+                    }}
+                    className="w-full px-3.5 py-2.5 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green bg-white shadow-2xs font-semibold"
+                    placeholder="e.g. 25"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-slate-400 pointer-events-none">{currency}/head</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-primary mb-1">
+                  Total Event Budget ({currency}) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={formData.overallBudget}
+                    onChange={(e) => setFormData({ ...formData, overallBudget: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 text-xs border border-amber-300 rounded-xl focus:outline-none focus:border-brand-green bg-white shadow-2xs font-bold text-amber-900"
+                    placeholder="e.g. 375"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-amber-600 pointer-events-none font-bold">{currency}</span>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Section 3: Headcount & Budget */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div>
-              <label className="block text-xs font-semibold text-slate-primary mb-1">
-                Attendees / Expected RSVP
-              </label>
-              <input
-                type="number"
-                min="1"
-                required
-                value={formData.expectedCount}
-                onChange={(e) => setFormData({ ...formData, expectedCount: Number(e.target.value) })}
-                className="w-full px-3.5 py-2.5 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green bg-white"
-              />
-              <span className="text-[10px] text-slate-muted mt-0.5 block">
-                {selectedEmpIds.length > 0 ? `Auto-synced from ${selectedEmpIds.length} invited staff` : 'Manually enter expected attendance'}
+            {/* Calculated Highlight Card */}
+            <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2">
+                <Wallet className="w-4 h-4 text-amber-700" />
+                <span className="text-amber-900 font-semibold">
+                  Scheduled Event Budget: <strong>{Number(formData.overallBudget || 0).toLocaleString()} {currency}</strong>
+                </span>
+              </div>
+              <span className="text-[11px] text-amber-800 font-medium">
+                {Number(formData.expectedCount || 0)} Guests &bull; {Number(formData.perPersonBudget || 0)} {currency} avg
               </span>
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-primary mb-1">
-                Per-Head Rate ({currency})
-              </label>
-              <input
-                type="number"
-                min="1"
-                required
-                value={formData.perPersonBudget}
-                onChange={(e) => setFormData({ ...formData, perPersonBudget: Number(e.target.value) })}
-                className="w-full px-3.5 py-2.5 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green bg-white"
-              />
-              <span className="text-[10px] text-slate-muted mt-0.5 block">
-                Standard: VIP 20 {currency}, Senior 10 {currency}, Junior 5 {currency}
-              </span>
-            </div>
-          </div>
-
-          {/* Calculated Total Budget Highlight */}
-          <div className="p-3.5 bg-brand-green-light border border-brand-green/20 rounded-xl flex items-center justify-between text-xs">
-            <div>
-              <span className="font-bold text-slate-primary block">Calculated Total Event Budget</span>
-              <span className="text-[11px] text-slate-secondary">
-                {Number(formData.expectedCount || 0)} attendees &times; {Number(formData.perPersonBudget || 0)} {currency}/head
-              </span>
-            </div>
-            <span className="font-extrabold text-brand-green text-base">
-              {(Number(formData.expectedCount || 0) * Number(formData.perPersonBudget || 0)).toLocaleString()} {currency}
-            </span>
           </div>
 
           {/* Section 4: Optional Menu Details & Notes */}

@@ -57,13 +57,6 @@ export function computeCategoryFinance({ financeOverview = {}, mealEntries = [] 
       meals: srMeals, 
       rate: srRate 
     },
-    { 
-      category: 'VIP', 
-      budget: vipBudget, 
-      actual: vipSpent, 
-      meals: vipMeals, 
-      rate: vipRate 
-    },
   ];
 
   const budgetStatus = [
@@ -88,17 +81,6 @@ export function computeCategoryFinance({ financeOverview = {}, mealEntries = [] 
       rate: srRate,
       utilization: srBudget > 0 ? ((srSpent / srBudget) * 100).toFixed(1) : '0.0',
       status: srSpent > srBudget ? 'Over Budget' : 'Healthy'
-    },
-    {
-      category: 'VIP',
-      name: 'VIP & Executive Fund (20 Staff)',
-      budget: vipBudget,
-      spent: vipSpent,
-      remaining: vipRemaining,
-      meals: vipMeals,
-      rate: vipRate,
-      utilization: vipBudget > 0 ? ((vipSpent / vipBudget) * 100).toFixed(1) : '0.0',
-      status: vipSpent > vipBudget ? 'Over Budget' : 'Healthy'
     }
   ];
 

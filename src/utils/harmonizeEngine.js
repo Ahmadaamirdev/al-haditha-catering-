@@ -29,9 +29,8 @@ export function harmonizeStateMetrics(state) {
   const entries = state.mealEntries || [];
   const juniorCount = entries.filter((m) => (m.category || '').toLowerCase() === 'junior').length;
   const seniorCount = entries.filter((m) => (m.category || '').toLowerCase() === 'senior').length;
-  const vipCount = entries.filter((m) => (m.category || '').toLowerCase() === 'vip').length;
-  const totalConsumed = juniorCount + seniorCount + vipCount;
-  const totalAllocated = state.wastageOverview?.totalAllocated || 300;
+  const totalConsumed = juniorCount + seniorCount;
+  const totalAllocated = state.wastageOverview?.totalAllocated || 240;
 
   // 1. Employee Overview eating counts & progress
   const updatedEmployeeOverview = {
@@ -52,15 +51,6 @@ export function harmonizeStateMetrics(state) {
       ...(state.employeeOverview?.senior || {}),
       eating: seniorCount,
       percentage: Math.min(100, Math.round((seniorCount / 40) * 100)),
-    },
-    vip: {
-      category: 'VIP',
-      total: 20,
-      color: '#009B4D',
-      bgColor: '#E5F5EC',
-      ...(state.employeeOverview?.vip || {}),
-      eating: vipCount,
-      percentage: Math.min(100, Math.round((vipCount / 20) * 100)),
     },
   };
 

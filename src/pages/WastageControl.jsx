@@ -268,18 +268,18 @@ export default function WastageControl() {
           <div className="mt-4 pt-3 border-t border-surface-border space-y-1.5 text-xs">
             <div className="flex justify-between text-slate-secondary">
               <span>Weekly Camp Capacity:</span>
-              <strong className="text-slate-primary">1,500 meals</strong>
+              <strong className="text-slate-primary">1,200 meals</strong>
             </div>
             <div className="flex justify-between text-slate-secondary">
               <span>Active Attendance Rate:</span>
               <strong className="text-brand-blue">
-                {Math.min(100, Math.round((Number(weeklyAverage) / 1500) * 100))}%
+                {Math.min(100, Math.round((Number(weeklyAverage) / 1200) * 100))}%
               </strong>
             </div>
             <div className="flex justify-between text-slate-secondary">
               <span>Unconsumed Variance:</span>
               <strong className="text-amber-600">
-                {Math.max(0, 1500 - Number(weeklyAverage))} portions
+                {Math.max(0, 1200 - Number(weeklyAverage))} portions
               </strong>
             </div>
           </div>
@@ -306,7 +306,7 @@ export default function WastageControl() {
               </span>
             </div>
             <p className="text-[11px] text-slate-secondary mt-1">
-              Max capacity: 6,600 meals (22 working days)
+              Max capacity: 5,280 meals (22 working days)
             </p>
           </div>
 
@@ -319,10 +319,6 @@ export default function WastageControl() {
             <div className="flex justify-between text-slate-secondary">
               <span>Senior Category (40 Staff):</span>
               <strong className="text-slate-primary">{seniorCount} meals</strong>
-            </div>
-            <div className="flex justify-between text-slate-secondary">
-              <span>VIP Category (20 Staff):</span>
-              <strong className="text-slate-primary">{vipCount} meals</strong>
             </div>
           </div>
         </div>

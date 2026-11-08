@@ -338,7 +338,7 @@ export default function MealAllocation() {
             {calendarStats.allocationsPerEmployee} Meals
           </p>
           <span className="text-[11px] text-slate-muted">
-            {calendarStats.workingDaysCount} days × 3 meals (100 Staff Total)
+            {calendarStats.workingDaysCount} days × 3 meals (80 Staff Total)
           </span>
         </div>
       </div>
@@ -478,7 +478,7 @@ export default function MealAllocation() {
         isOpen={isGenerateModalOpen}
         onClose={() => setIsGenerateModalOpen(false)}
         title="Generate Monthly Meal Allocation"
-        subtitle="Calculates token credits for Junior, Senior, and VIP workforce based on calendar working days."
+        subtitle="Calculates token credits for Junior and Senior workforce based on calendar working days."
       >
         <form onSubmit={handleGenerateSubmit} className="space-y-4">
           <div>
@@ -529,16 +529,10 @@ export default function MealAllocation() {
                 {(40 * workingDaysInput * 3).toLocaleString()} Credits
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-secondary">VIP Credits to Generate (20 Staff):</span>
-              <span className="font-bold text-slate-primary">
-                {(20 * workingDaysInput * 3).toLocaleString()} Credits
-              </span>
-            </div>
             <div className="pt-2 border-t border-slate-200 flex justify-between font-bold">
               <span className="text-slate-800">Total Workforce Allocation:</span>
               <span className="text-brand-green">
-                {(100 * workingDaysInput * 3).toLocaleString()} Credits
+                {(80 * workingDaysInput * 3).toLocaleString()} Credits
               </span>
             </div>
           </div>
