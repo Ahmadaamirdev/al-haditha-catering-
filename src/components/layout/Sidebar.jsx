@@ -139,35 +139,6 @@ export default function Sidebar() {
             </button>
           </div>
         </div>
-
-        {/* Decorative Dotted Matrix & Wave (as in the reference image) */}
-        <div className="relative pointer-events-none overflow-hidden pb-4 px-6 flex justify-start">
-          <svg width="150" height="90" viewBox="0 0 150 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Background wave glow */}
-            <path d="M-20 80 Q 40 40 100 70 T 170 50" stroke="#1684AA" strokeWidth="3" strokeOpacity="0.15" fill="none" />
-            <path d="M-20 70 Q 50 20 120 60 T 170 40" stroke="#009B4D" strokeWidth="2" strokeOpacity="0.15" fill="none" />
-
-            {/* Matrix of green and blue dots matching the Al Haditha Energy logo 'H' styling */}
-            {[
-              { x: 10, y: 80, c: '#009B4D' }, { x: 10, y: 70, c: '#009B4D' }, { x: 10, y: 60, c: '#1684AA' },
-              { x: 22, y: 80, c: '#009B4D' }, { x: 22, y: 70, c: '#009B4D' }, { x: 22, y: 60, c: '#1684AA' }, { x: 22, y: 50, c: '#1684AA' },
-              { x: 34, y: 80, c: '#009B4D' }, { x: 34, y: 70, c: '#009B4D' }, { x: 34, y: 60, c: '#1684AA' }, { x: 34, y: 50, c: '#1684AA' }, { x: 34, y: 40, c: '#009B4D' },
-              { x: 46, y: 80, c: '#009B4D' }, { x: 46, y: 70, c: '#009B4D' }, { x: 46, y: 60, c: '#1684AA' }, { x: 46, y: 50, c: '#1684AA' }, { x: 46, y: 40, c: '#009B4D' }, { x: 46, y: 30, c: '#009B4D' },
-              { x: 58, y: 80, c: '#009B4D' }, { x: 58, y: 70, c: '#009B4D' }, { x: 58, y: 60, c: '#1684AA' }, { x: 58, y: 50, c: '#1684AA' }, { x: 58, y: 40, c: '#009B4D' }, { x: 58, y: 30, c: '#009B4D' }, { x: 58, y: 20, c: '#1684AA' },
-              { x: 70, y: 80, c: '#009B4D' }, { x: 70, y: 70, c: '#009B4D' }, { x: 70, y: 60, c: '#1684AA' }, { x: 70, y: 50, c: '#1684AA' }, { x: 70, y: 40, c: '#009B4D' }, { x: 70, y: 30, c: '#009B4D' },
-              { x: 82, y: 80, c: '#009B4D' }, { x: 82, y: 70, c: '#009B4D' }, { x: 82, y: 60, c: '#1684AA' }, { x: 82, y: 50, c: '#1684AA' },
-            ].map((dot, i) => (
-              <circle 
-                key={i} 
-                cx={dot.x} 
-                cy={dot.y} 
-                r="2.5" 
-                fill={dot.c} 
-                fillOpacity={0.8}
-              />
-            ))}
-          </svg>
-        </div>
       </aside>
     </>
   );

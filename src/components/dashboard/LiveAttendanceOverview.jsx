@@ -7,6 +7,11 @@ export default function LiveAttendanceOverview() {
   const { data, resetAllEntriesToZero, deleteMealEntry, recordMealEntry } = useApp();
   const { mealEntries = [] } = data;
 
+  const todayIso = '2026-11-08';
+  const todayEntriesCount = mealEntries.filter(
+    (e) => (e.date || '') === todayIso || (e.date || '').startsWith(todayIso)
+  ).length;
+
   const handleQuickAdd = (empId, empName, cat) => {
     recordMealEntry({
       employeeId: empId,
@@ -17,7 +22,7 @@ export default function LiveAttendanceOverview() {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow space-y-3.5">
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-surface-border shadow-card hover:shadow-card-hover transition-shadow space-y-3.5 font-sans">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-surface-border">
         <div className="flex items-center space-x-3">
@@ -35,7 +40,7 @@ export default function LiveAttendanceOverview() {
               </span>
             </div>
             <p className="text-xs text-slate-secondary">
-              Real-time attendance recorded from the Entry Kiosk ({mealEntries.length} logged today)
+              Real-time attendance recorded from the Entry Kiosk ({todayEntriesCount} logged today)
             </p>
           </div>
         </div>

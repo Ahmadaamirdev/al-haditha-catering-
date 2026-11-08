@@ -57,6 +57,20 @@ export default function Finance() {
   // Date Filtering State for Variance & Budget Difference
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
+  const [activePreset, setActivePreset] = useState('all'); // 'all' | 'today' | 'custom'
+  const todayStr = '2026-11-08';
+
+  const handleSelectAllDates = () => {
+    setActivePreset('all');
+    setFilterStartDate('');
+    setFilterEndDate('');
+  };
+
+  const handleSelectToday = () => {
+    setActivePreset('today');
+    setFilterStartDate(todayStr);
+    setFilterEndDate(todayStr);
+  };
 
   // Event Financial Calendar State
   const [calendarYear, setCalendarYear] = useState(2026);
@@ -71,20 +85,13 @@ export default function Finance() {
     return events.reduce((sum, ev) => sum + (ev.overallBudget || 0), 0);
   }, [events]);
 
-  // Helper to test if a date string falls inside the active date filter
+  // Fast string-based range check without regex or Date allocations
   const isDateInRange = (dateStr, start, end) => {
     if (!start && !end) return true;
     if (!dateStr) return false;
-    let normalized = dateStr;
-    const match = String(dateStr).match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-    if (!match) {
-      const d = new Date(dateStr);
-      if (!isNaN(d.getTime())) {
-        normalized = d.toISOString().split('T')[0];
-      }
-    }
-    if (start && normalized < start) return false;
-    if (end && normalized > end) return false;
+    const d = String(dateStr).slice(0, 10);
+    if (start && d < start) return false;
+    if (end && d > end) return false;
     return true;
   };
 
@@ -142,6 +149,28 @@ export default function Finance() {
   const leadingBlanks = Array.from({ length: firstDayOfWeek });
   const monthDays = Array.from({ length: totalDaysInMonth }, (_, i) => i + 1);
 
+  // Pre-index events by day to avoid re-filtering on every cell render
+  const eventsByDay = useMemo(() => {
+    const map = {};
+    events.forEach((ev) => {
+      let d = null;
+      if (ev.fullDate) {
+        const parts = ev.fullDate.split('-');
+        if (parts.length === 3 && parseInt(parts[0], 10) === calendarYear && (parseInt(parts[1], 10) - 1) === calendarMonthIdx) {
+          d = parseInt(parts[2], 10);
+        }
+      }
+      if (!d && ev.day && (calendarMonthIdx === 10 || ev.month === 'Nov')) {
+        d = parseInt(ev.day, 10);
+      }
+      if (d) {
+        if (!map[d]) map[d] = [];
+        map[d].push(ev);
+      }
+    });
+    return map;
+  }, [events, calendarYear, calendarMonthIdx]);
+
   const handlePrevMonth = () => {
     if (calendarMonthIdx === 0) {
       setCalendarMonthIdx(11);
@@ -163,9 +192,11 @@ export default function Finance() {
   const handleCalendarDayClick = (dayNum) => {
     const formatted = `${calendarYear}-${String(calendarMonthIdx + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
     if (filterStartDate === formatted && filterEndDate === formatted) {
+      setActivePreset('all');
       setFilterStartDate('');
       setFilterEndDate('');
     } else {
+      setActivePreset('custom');
       setFilterStartDate(formatted);
       setFilterEndDate(formatted);
     }
@@ -333,9 +364,9 @@ export default function Finance() {
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => { setFilterStartDate(''); setFilterEndDate(''); }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  !filterStartDate && !filterEndDate
+                onClick={handleSelectAllDates}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                  activePreset === 'all'
                     ? 'bg-brand-green text-white shadow-pill font-bold'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
@@ -344,13 +375,9 @@ export default function Finance() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const today = new Date().toISOString().split('T')[0];
-                  setFilterStartDate(today);
-                  setFilterEndDate(today);
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  filterStartDate && filterStartDate === new Date().toISOString().split('T')[0] && filterEndDate === filterStartDate
+                onClick={handleSelectToday}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                  activePreset === 'today'
                     ? 'bg-brand-green text-white shadow-pill font-bold'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
@@ -366,7 +393,10 @@ export default function Finance() {
                 <input
                   type="date"
                   value={filterStartDate}
-                  onChange={(e) => setFilterStartDate(e.target.value)}
+                  onChange={(e) => {
+                    setFilterStartDate(e.target.value);
+                    setActivePreset('custom');
+                  }}
                   className="text-xs bg-transparent focus:outline-none text-slate-800"
                 />
               </div>
@@ -376,7 +406,10 @@ export default function Finance() {
                 <input
                   type="date"
                   value={filterEndDate}
-                  onChange={(e) => setFilterEndDate(e.target.value)}
+                  onChange={(e) => {
+                    setFilterEndDate(e.target.value);
+                    setActivePreset('custom');
+                  }}
                   className="text-xs bg-transparent focus:outline-none text-slate-800"
                 />
               </div>
@@ -384,7 +417,7 @@ export default function Finance() {
               {(filterStartDate || filterEndDate) && (
                 <button
                   type="button"
-                  onClick={() => { setFilterStartDate(''); setFilterEndDate(''); }}
+                  onClick={handleSelectAllDates}
                   className="flex items-center space-x-1 text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                   title="Clear Date Filter"
                 >
@@ -505,22 +538,18 @@ export default function Finance() {
           {monthDays.map((d) => {
             const dateStr = `${calendarYear}-${String(calendarMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const isSelected = filterStartDate === dateStr && filterEndDate === dateStr;
-            const dayEvents = events.filter((ev) => {
-              if (ev.fullDate && ev.fullDate.startsWith(dateStr)) return true;
-              if (Number(ev.day) === d && (calendarMonthIdx === 10 || ev.month === 'Nov')) return true;
-              return false;
-            });
+            const dayEvents = eventsByDay[d] || [];
             const hasEvent = dayEvents.length > 0;
 
             return (
               <div
                 key={d}
                 onClick={() => handleCalendarDayClick(d)}
-                className={`min-h-20 p-2.5 rounded-xl border transition-all flex flex-col justify-between cursor-pointer select-none ${
+                className={`min-h-20 p-2.5 rounded-xl border transition-colors flex flex-col justify-between cursor-pointer select-none ${
                   isSelected
-                    ? 'ring-2 ring-brand-green border-brand-green bg-emerald-50/90 shadow-sm scale-[1.02]'
+                    ? 'ring-2 ring-brand-green border-brand-green bg-emerald-50 shadow-xs'
                     : hasEvent
-                    ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-300 shadow-xs hover:border-amber-400 hover:shadow-sm'
+                    ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-300 shadow-2xs hover:border-amber-400'
                     : 'bg-white border-surface-border hover:border-slate-300 hover:bg-slate-50/50'
                 }`}
                 title={hasEvent ? `Event on ${d} ${monthNames[calendarMonthIdx]}: Click to filter budget` : `Day ${d}: Click to filter budget`}

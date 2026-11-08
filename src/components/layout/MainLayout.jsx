@@ -14,7 +14,7 @@ export default function MainLayout() {
       <div className="lg:pl-[260px] flex flex-col flex-1 min-w-0 transition-all duration-300 relative z-10">
         <Header />
 
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 pb-12 pt-2 max-w-[1600px] w-full mx-auto">
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 pb-12 pt-4 sm:pt-6 max-w-[1600px] w-full mx-auto">
           <Outlet />
         </main>
       </div>

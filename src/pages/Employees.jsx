@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Users, 
   UserPlus, 
@@ -16,7 +16,10 @@ import {
   Eye,
   CheckCircle2,
   Sparkles,
-  Utensils
+  Utensils,
+  Calendar,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Modal from '../components/common/Modal';
@@ -26,6 +29,81 @@ export default function Employees() {
   const { data, addEmployee, deleteEmployee, addToast } = useApp();
   const { employees = [] } = data;
 
+  // Month navigation: support 2025, 2026, 2027
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const allMonths = useMemo(() => {
+    const list = [];
+    [2025, 2026, 2027].forEach((yr) => {
+      monthNames.forEach((mName, mIdx) => {
+        list.push({
+          label: `${mName} ${yr}`,
+          year: yr,
+          monthIndex: mIdx,
+          monthName: mName,
+        });
+      });
+    });
+    return list;
+  }, []);
+
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    return data.selectedMonth || 'November 2026';
+  });
+
+  const activeMonthObj = useMemo(() => {
+    return allMonths.find((m) => m.label === selectedMonth) || {
+      label: 'November 2026',
+      year: 2026,
+      monthIndex: 10,
+      monthName: 'November',
+    };
+  }, [allMonths, selectedMonth]);
+
+  const monthStats = useMemo(() => {
+    return calculateMonthCalendar(activeMonthObj.year, activeMonthObj.monthIndex);
+  }, [activeMonthObj]);
+
+  // Small Calendar Month Picker State
+  const [isCalendarPickerOpen, setIsCalendarPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(activeMonthObj.year);
+  const calendarPickerRef = useRef(null);
+
+  useEffect(() => {
+    setPickerYear(activeMonthObj.year);
+  }, [activeMonthObj.year]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (calendarPickerRef.current && !calendarPickerRef.current.contains(event.target)) {
+        setIsCalendarPickerOpen(false);
+      }
+    };
+    if (isCalendarPickerOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCalendarPickerOpen]);
+
+  const selectMonthFromPicker = (monthIndex, yr) => {
+    const targetLabel = `${monthNames[monthIndex]} ${yr}`;
+    setSelectedMonth(targetLabel);
+    setIsCalendarPickerOpen(false);
+  };
+
+  const currentMonthIdx = allMonths.findIndex((m) => m.label === selectedMonth);
+  const handlePrevMonth = () => {
+    if (currentMonthIdx > 0) setSelectedMonth(allMonths[currentMonthIdx - 1].label);
+  };
+  const handleNextMonth = () => {
+    if (currentMonthIdx < allMonths.length - 1) setSelectedMonth(allMonths[currentMonthIdx + 1].label);
+  };
+
   // Search & Filter State
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,10 +111,16 @@ export default function Employees() {
   // Selected Employee Ledger Modal State
   const [selectedEmployeeLedger, setSelectedEmployeeLedger] = useState(null);
 
-  // Real-time allocation map for all employees (reactively minused upon each meal check-in)
+  // Real-time allocation map synchronized with selected month and meal entries
   const allocationsMap = useMemo(() => {
-    return getEmployeesAllocationMap(employees, data.mealEntries || [], new Date());
-  }, [employees, data.mealEntries]);
+    return getEmployeesAllocationMap(
+      employees, 
+      data.mealEntries || [], 
+      new Date(),
+      activeMonthObj.year,
+      activeMonthObj.monthIndex
+    );
+  }, [employees, data.mealEntries, activeMonthObj]);
 
   // Add Employee Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -217,8 +301,8 @@ export default function Employees() {
       {/* Main Table Container */}
       <div className="bg-white rounded-2xl border border-surface-border shadow-card overflow-hidden">
         
-        {/* Controls: Category Filter Tabs & Search Bar */}
-        <div className="p-5 border-b border-surface-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Controls: Category Filter Tabs, Month/Date Filter & Search Bar */}
+        <div className="p-4 sm:p-5 border-b border-surface-border flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
           
           {/* Category Tabs */}
           <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl self-start overflow-x-auto max-w-full">
@@ -246,42 +330,154 @@ export default function Employees() {
             ))}
           </div>
 
-          {/* Search Box */}
-          <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by ID, name, role..."
-              className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-surface-border rounded-xl focus:bg-white focus:outline-none focus:border-brand-blue transition-colors"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs"
-              >
-                ✕
-              </button>
-            )}
+          {/* Right Controls: Month/Date Filter + Search */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Month/Date Allocation Selector with Small Calendar Popover */}
+            <div className="relative" ref={calendarPickerRef}>
+              <div className="flex items-center space-x-1 bg-slate-50 border border-surface-border p-1 rounded-xl shadow-2xs">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  disabled={currentMonthIdx <= 0}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                  title="Previous Month"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {/* Calendar Button that toggles the small calendar popover */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPickerYear(activeMonthObj.year);
+                    setIsCalendarPickerOpen(!isCalendarPickerOpen);
+                  }}
+                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    isCalendarPickerOpen
+                      ? 'bg-brand-green text-white shadow-pill'
+                      : 'text-slate-primary hover:bg-white'
+                  }`}
+                  title="Click to select month from calendar"
+                >
+                  <Calendar className={`w-4 h-4 ${isCalendarPickerOpen ? 'text-white' : 'text-brand-green'}`} />
+                  <span>{selectedMonth}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  disabled={currentMonthIdx >= allMonths.length - 1}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                  title="Next Month"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Small Calendar Month Picker Popover */}
+              {isCalendarPickerOpen && (
+                <div className="absolute left-0 sm:right-0 sm:left-auto mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-border p-3.5 z-50 animate-fade-in">
+                  {/* Year Header with Prev/Next */}
+                  <div className="flex items-center justify-between pb-2 border-b border-surface-border mb-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setPickerYear((y) => Math.max(2024, y - 1))}
+                      className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Previous Year"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-bold text-slate-primary tracking-wide">
+                      {pickerYear}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPickerYear((y) => Math.min(2030, y + 1))}
+                      className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Next Year"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* 12 Months Grid */}
+                  <div className="grid grid-cols-3 gap-1.5 text-xs">
+                    {monthNames.map((name, idx) => {
+                      const isSelected = activeMonthObj.monthIndex === idx && activeMonthObj.year === pickerYear;
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => selectMonthFromPicker(idx, pickerYear)}
+                          className={`py-2 rounded-xl text-center font-semibold text-xs transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-brand-green text-white shadow-pill font-bold'
+                              : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                          }`}
+                        >
+                          {name.slice(0, 3)}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Quick Shortcut Row */}
+                  <div className="mt-2.5 pt-2 border-t border-surface-border flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Current: {activeMonthObj.monthName}</span>
+                    <button
+                      type="button"
+                      onClick={() => selectMonthFromPicker(10, 2026)}
+                      className="text-brand-blue font-bold hover:underline cursor-pointer"
+                    >
+                      Nov 2026
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quota Badge */}
+            <span className="hidden sm:inline-flex text-[11px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200 whitespace-nowrap">
+              {monthStats.workingDaysCount} Days • {monthStats.allocationsPerEmployee} Quota
+            </span>
+
+            {/* Search Box */}
+            <div className="relative w-full sm:w-60">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by ID, name, role..."
+                className="w-full pl-9 pr-7 py-2 text-xs bg-slate-50 border border-surface-border rounded-xl focus:bg-white focus:outline-none focus:border-brand-blue transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Employees Table with Individual Allocations */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/80 border-b border-surface-border text-slate-secondary text-[10px] uppercase font-semibold tracking-wider">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-slate-50/90 border-b border-surface-border text-slate-secondary text-[10px] uppercase font-bold tracking-wider">
               <tr>
-                <th className="px-4 py-3">Employee ID</th>
-                <th className="px-4 py-3">Full Name</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Department & Role</th>
-                <th className="px-4 py-3 text-center">Daily Quota</th>
-                <th className="px-4 py-3 text-center">Monthly Quota</th>
-                <th className="px-4 py-3 text-center">Consumed</th>
-                <th className="px-4 py-3 text-center">Remaining Balance</th>
-                <th className="px-4 py-3 text-center">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3.5 text-left w-28 whitespace-nowrap">Employee ID</th>
+                <th className="px-4 py-3.5 text-left min-w-[190px] whitespace-nowrap">Full Name</th>
+                <th className="px-4 py-3.5 text-center w-28 whitespace-nowrap">Category</th>
+                <th className="px-4 py-3.5 text-left min-w-[200px] whitespace-nowrap">Department & Role</th>
+                <th className="px-4 py-3.5 text-center w-24 whitespace-nowrap">Daily Quota</th>
+                <th className="px-4 py-3.5 text-center w-28 whitespace-nowrap">Monthly Quota</th>
+                <th className="px-4 py-3.5 text-center w-28 whitespace-nowrap">Consumed</th>
+                <th className="px-4 py-3.5 text-center w-40 whitespace-nowrap">Remaining Balance</th>
+                <th className="px-4 py-3.5 text-center w-28 whitespace-nowrap">Status</th>
+                <th className="px-4 py-3.5 text-center w-20 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
@@ -294,21 +490,21 @@ export default function Employees() {
               ) : (
                 filteredEmployees.map((emp) => {
                   const alloc = allocationsMap[emp.id] || {
-                    totalMonthlyQuota: 66,
+                    totalMonthlyQuota: monthStats.allocationsPerEmployee || 66,
                     consumedCount: 0,
                     expiredCount: 0,
-                    remainingMonthlyAllocations: 66
+                    remainingMonthlyAllocations: monthStats.allocationsPerEmployee || 66
                   };
 
                   return (
-                    <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors">
+                    <tr key={emp.id} className="hover:bg-slate-50/80 transition-colors">
                       {/* ID */}
-                      <td className="px-4 py-3 font-mono font-bold text-slate-primary">
+                      <td className="px-4 py-3.5 font-mono font-bold text-slate-800 text-left whitespace-nowrap">
                         {emp.id}
                       </td>
 
                       {/* Name with initials avatar */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3.5 text-left">
                         <div className="flex items-center space-x-2.5">
                           <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[11px] flex-shrink-0 ${
                             emp.category === 'Junior' ? 'bg-emerald-100 text-emerald-800' :
@@ -317,63 +513,83 @@ export default function Employees() {
                           }`}>
                             {emp.name.charAt(0)}
                           </div>
-                          <span className="font-semibold text-slate-primary">{emp.name}</span>
+                          <span className="font-semibold text-slate-900 truncate max-w-[170px] block" title={emp.name}>
+                            {emp.name}
+                          </span>
                         </div>
                       </td>
 
-                      {/* Category */}
-                      <td className="px-4 py-3">
-                        <span className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                          emp.category === 'Junior' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
-                          emp.category === 'Senior' ? 'bg-sky-100 text-sky-800 border border-sky-200' :
-                          'bg-purple-100 text-purple-800 border border-purple-200'
-                        }`}>
-                          {emp.category}
-                        </span>
+                      {/* Category Badge - Uniform & Centered Bubble */}
+                      <td className="px-4 py-3.5 text-center">
+                        <div className="flex items-center justify-center">
+                          <span className={`inline-flex items-center justify-center min-w-[76px] px-2.5 py-1 rounded-full text-[11px] font-bold text-center ${
+                            emp.category === 'Junior' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                            emp.category === 'Senior' ? 'bg-sky-100 text-sky-800 border border-sky-200' :
+                            'bg-purple-100 text-purple-800 border border-purple-200'
+                          }`}>
+                            {emp.category}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Department & Role */}
-                      <td className="px-4 py-3">
-                        <span className="text-slate-primary font-medium block">{emp.designation}</span>
-                        <span className="text-[11px] text-slate-secondary">{emp.department}</span>
+                      <td className="px-4 py-3.5 text-left">
+                        <span className="text-slate-900 font-semibold block truncate max-w-[220px]" title={emp.designation}>
+                          {emp.designation}
+                        </span>
+                        <span className="text-[11px] text-slate-500 block truncate max-w-[220px]" title={emp.department}>
+                          {emp.department}
+                        </span>
                       </td>
 
                       {/* Daily Quota */}
-                      <td className="px-4 py-3 text-center font-medium text-slate-primary">
+                      <td className="px-4 py-3.5 text-center font-medium text-slate-700 whitespace-nowrap">
                         3 Meals
                       </td>
 
                       {/* Monthly Quota */}
-                      <td className="px-4 py-3 text-center font-bold text-slate-primary">
+                      <td className="px-4 py-3.5 text-center font-bold text-slate-900 whitespace-nowrap">
                         {alloc.totalMonthlyQuota} Meals
                       </td>
 
-                      {/* Consumed Allocations */}
-                      <td className="px-4 py-3 text-center">
-                        <span className={`font-bold ${alloc.consumedCount > 0 ? 'text-brand-blue' : 'text-slate-400'}`}>
-                          {alloc.consumedCount} Consumed
-                        </span>
+                      {/* Consumed Allocations - Uniform & Centered Bubble */}
+                      <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center">
+                          <span className={`inline-flex items-center justify-center min-w-[95px] px-2.5 py-1 rounded-full text-xs font-bold text-center ${
+                            alloc.consumedCount > 0 
+                              ? 'bg-sky-50 text-brand-blue border border-sky-200' 
+                              : 'bg-slate-100/70 text-slate-400 border border-slate-200/60'
+                          }`}>
+                            {alloc.consumedCount} Consumed
+                          </span>
+                        </div>
                       </td>
 
-                      {/* Remaining Balance (minused upon each entry) */}
-                      <td className="px-4 py-3 text-center">
-                        <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-brand-green border border-emerald-300 shadow-xs">
-                          <span>{alloc.remainingMonthlyAllocations} Meals</span>
-                          {alloc.consumedCount > 0 && <span className="text-[10px] text-emerald-700 font-bold ml-1">(-{alloc.consumedCount})</span>}
-                        </span>
+                      {/* Remaining Balance - Uniform & Centered Bubble */}
+                      <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center">
+                          <span className="inline-flex items-center justify-center min-w-[125px] px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-brand-green border border-emerald-300 shadow-2xs text-center">
+                            <span>{alloc.remainingMonthlyAllocations} Meals</span>
+                            {alloc.consumedCount > 0 && (
+                              <span className="text-[10px] text-emerald-700 font-bold ml-1">(-{alloc.consumedCount})</span>
+                            )}
+                          </span>
+                        </div>
                       </td>
 
-                      {/* Status */}
-                      <td className="px-4 py-3 text-center">
-                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-brand-green border border-emerald-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-brand-green" />
-                          <span>Active</span>
-                        </span>
+                      {/* Status - Uniform & Centered Bubble */}
+                      <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center">
+                          <span className="inline-flex items-center justify-center min-w-[76px] space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-brand-green border border-emerald-200 text-center">
+                            <span className="w-1.5 h-1.5 rounded-full bg-brand-green" />
+                            <span>Active</span>
+                          </span>
+                        </div>
                       </td>
 
                       {/* Actions: View Ledger & Delete */}
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end space-x-1">
+                      <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center space-x-1">
                           <button
                             onClick={() => setSelectedEmployeeLedger({ emp, alloc })}
                             className="p-1.5 text-slate-400 hover:text-brand-blue rounded-lg hover:bg-sky-50 transition-colors cursor-pointer"
@@ -599,7 +815,7 @@ export default function Employees() {
               <div className="p-3 bg-slate-50 rounded-xl border border-surface-border text-center">
                 <span className="text-[10px] text-slate-secondary block">Monthly Quota</span>
                 <span className="text-base font-bold text-slate-primary">{selectedEmployeeLedger.alloc.totalMonthlyQuota} Meals</span>
-                <span className="text-[10px] text-slate-muted block">22 active days</span>
+                <span className="text-[10px] text-slate-muted block">{monthStats.workingDaysCount} active days</span>
               </div>
               <div className="p-3 bg-sky-50 rounded-xl border border-sky-100 text-center">
                 <span className="text-[10px] text-sky-800 block">Consumed</span>

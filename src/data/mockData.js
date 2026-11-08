@@ -1,5 +1,6 @@
 // Mock Data for Al Haditha Energy Meal Management System
 import { alHadithaEmployees } from './employeesData.js';
+import { generatedMockMealEntries } from './mockMealEntries.js';
 
 export const initialMockData = {
   currency: 'OMR', // ERP currency strictly set to OMR (Omani Rial)
@@ -96,8 +97,8 @@ export const initialMockData = {
     ]
   },
 
-  // Real-time Meal Attendance Entries Feed - Starts EMPTY (0) so user can test cleanly
-  mealEntries: [],
+  // Real-time Meal Attendance Entries Feed - 2 Weeks of Working Days Verified Feed
+  mealEntries: generatedMockMealEntries,
 
   // Timetable & Meals Overview
   timetable: [

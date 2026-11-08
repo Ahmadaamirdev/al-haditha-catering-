@@ -20,6 +20,15 @@ export function AppProvider({ children }) {
         if (parsed.mealEntries) {
           parsed.mealEntries = parsed.mealEntries.filter((e) => (e.category || '').toUpperCase() !== 'VIP');
         }
+        // Ensure comprehensive 2-week baseline entries are present
+        const existingIds = new Set((parsed.mealEntries || []).map((e) => e.id));
+        const mergedEntries = [...(parsed.mealEntries || [])];
+        (initialMockData.mealEntries || []).forEach((entry) => {
+          if (!existingIds.has(entry.id)) {
+            mergedEntries.push(entry);
+          }
+        });
+        parsed.mealEntries = mergedEntries;
         return harmonizeStateMetrics(parsed);
       }
     } catch {
@@ -80,7 +89,7 @@ export function AppProvider({ children }) {
                   (e) => (e.category || '').toUpperCase() !== 'VIP'
                 );
                 const entryMap = new Map();
-                [...localEntries, ...mongoEntries].forEach((e) => {
+                [...(initialMockData.mealEntries || []), ...localEntries, ...mongoEntries].forEach((e) => {
                   if (e && e.id && (e.category || '').toUpperCase() !== 'VIP') entryMap.set(e.id, e);
                 });
                 mergedData.mealEntries = Array.from(entryMap.values());
