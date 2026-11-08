@@ -117,19 +117,6 @@ export default function Sidebar() {
 
           {/* Secondary Nav */}
           <div className="space-y-1.5">
-            <NavLink
-              to="/settings"
-              onClick={closeMobile}
-              className={`flex items-center space-x-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                location.pathname === '/settings'
-                  ? 'bg-[#009B4D] text-white shadow-pill font-semibold'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Settings className="w-5 h-5 text-slate-400" />
-              <span className="tracking-wide">Settings</span>
-            </NavLink>
-
             <button
               onClick={handleLogout}
               className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 text-left"

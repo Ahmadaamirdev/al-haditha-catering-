@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarDays, ArrowRight, Users, Wallet, Clock, MapPin, Plus } from 'lucide-react';
+import { CalendarDays, ArrowRight, Users, Wallet, Clock, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export default function EventsOverview() {
@@ -93,64 +93,53 @@ export default function EventsOverview() {
         </div>
       ) : (
         <div className="flex-1 flex flex-col justify-between min-h-0">
-          {/* Scrollable Event List with Nearest Event at Top */}
-          <div className="space-y-2.5 max-h-[310px] overflow-y-auto pr-1 custom-scrollbar">
+          {/* Scrollable Event List: Enforced so exactly two enlarged cards are visible at a time with smooth scrolling to see more */}
+          <div className="space-y-3 max-h-[240px] overflow-y-auto scroll-smooth pr-1.5 custom-scrollbar">
             {sortedEvents.map((ev, idx) => (
               <div
                 key={ev.id || `${ev.title}-${idx}`}
                 onClick={() => navigate('/events', { state: { highlightEventId: ev.id } })}
-                className="bg-slate-50/80 hover:bg-emerald-50/40 rounded-xl p-3 border border-surface-border hover:border-brand-green/30 transition-all cursor-pointer group shadow-2xs"
+                className="bg-slate-50/80 hover:bg-emerald-50/40 rounded-xl p-3.5 sm:p-4 border border-surface-border hover:border-brand-green/30 transition-all cursor-pointer group shadow-2xs"
                 title="Click to view details in Events module"
               >
-                <div className="flex items-start space-x-3">
-                  {/* Date Box */}
-                  <div className="w-12 h-13 rounded-xl bg-brand-green-light border border-brand-green/20 flex flex-col items-center justify-center text-brand-green flex-shrink-0 shadow-xs py-1 group-hover:bg-brand-green group-hover:text-white transition-colors">
-                    <span className="text-lg font-black leading-none">{ev.day || '20'}</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5">{ev.month || 'Nov'}</span>
+                <div className="flex items-start space-x-3.5">
+                  {/* Enlarged Date Box */}
+                  <div className="w-13 h-15 sm:w-14 sm:h-16 rounded-xl bg-brand-green-light border border-brand-green/20 flex flex-col items-center justify-center text-brand-green flex-shrink-0 shadow-xs py-1 group-hover:bg-brand-green group-hover:text-white transition-colors">
+                    <span className="text-xl font-black leading-none">{ev.day || '20'}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider mt-0.5">{ev.month || 'Nov'}</span>
                   </div>
 
-                  {/* Info */}
+                  {/* Enlarged Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1.5">
-                      <h3 className="text-xs sm:text-sm font-bold text-slate-primary truncate group-hover:text-brand-green transition-colors">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-primary truncate group-hover:text-brand-green transition-colors">
                         {ev.title}
                       </h3>
-                      <span className="text-[10px] font-semibold text-brand-green bg-emerald-100/70 border border-emerald-200/50 px-2 py-0.5 rounded-md flex-shrink-0">
-                        {ev.status || 'Confirmed'}
-                      </span>
                     </div>
 
                     {/* Sub metrics */}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-secondary">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-secondary">
                       <div className="flex items-center space-x-1.5">
                         <Users className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                         <span>
-                          <strong className="text-slate-primary font-semibold">{ev.expectedCount || ev.invitedCount || 0}</strong> Guests
+                          <strong className="text-slate-primary font-bold">{ev.expectedCount || ev.invitedCount || 0}</strong> Guests
                         </span>
                       </div>
 
                       <div className="flex items-center space-x-1.5">
                         <Wallet className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                         <span>
-                          <strong className="text-slate-primary font-semibold">{(ev.overallBudget || 0).toLocaleString()} {currency}</strong>
+                          <strong className="text-slate-primary font-bold">{(ev.overallBudget || 0).toLocaleString()} {currency}</strong>
                         </span>
                       </div>
                     </div>
 
-                    {(ev.time || ev.location) && (
-                      <div className="flex items-center space-x-3 mt-1.5 text-[11px] text-slate-400">
-                        {ev.time && (
-                          <span className="flex items-center space-x-1">
-                            <Clock className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                            <span>{ev.time}</span>
-                          </span>
-                        )}
-                        {ev.location && (
-                          <span className="flex items-center space-x-1 truncate">
-                            <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                            <span className="truncate">{ev.location}</span>
-                          </span>
-                        )}
+                    {ev.time && (
+                      <div className="flex items-center space-x-3 mt-1.5 text-xs text-slate-400">
+                        <span className="flex items-center space-x-1">
+                          <Clock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                          <span>{ev.time}</span>
+                        </span>
                       </div>
                     )}
                   </div>

@@ -188,16 +188,9 @@ export default function WastageControl() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-surface-border shadow-card">
         <div>
-          <div className="flex items-center space-x-2 text-brand-blue font-semibold text-xs uppercase tracking-wider">
-            <Utensils className="w-4 h-4 text-brand-blue" />
-            <span>Kitchen Preparation & Wastage Governance</span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-primary tracking-tight mt-1">
+          <h1 className="text-2xl font-bold text-slate-primary tracking-tight">
             Mess Intake & Wastage Control
           </h1>
-          <p className="text-xs sm:text-sm text-slate-secondary mt-1">
-            Track daily attendees for Breakfast, Lunch, and Dinner with exact kitchen preparation targets.
-          </p>
         </div>
       </div>
 
@@ -218,7 +211,6 @@ export default function WastageControl() {
                 { id: 'today', label: 'Today' },
                 { id: 'week', label: 'This Week' },
                 { id: 'month', label: 'This Month' },
-                { id: 'all', label: 'All Dates' },
               ].map((p) => (
                 <button
                   key={p.id}
@@ -540,19 +532,6 @@ export default function WastageControl() {
                     <div className="text-xl sm:text-2xl font-black text-indigo-950 tracking-tight">
                       Cook for {dinnerRec.target} Employees
                     </div>
-                  </div>
-                </div>
-
-                {/* 2-3 Lines Beginner-Friendly Textual Summary */}
-                <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start space-x-3 text-xs leading-relaxed text-slate-700">
-                  <Info className="w-4 h-4 text-brand-green flex-shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-slate-900 block mb-1">
-                      Why We Recommend These Preparation Ranges:
-                    </span>
-                    <p className="text-slate-600">
-                      These targets are based on verified daily turnout trends across working days. Because operational field crews rotate in duty shifts, mess attendance peaks during Lunch and Dinner while staying moderate at Breakfast. Cooking within these recommended buffer ranges prevents surplus food spoilage while ensuring every attending employee is promptly and fully served.
-                    </p>
                   </div>
                 </div>
               </div>

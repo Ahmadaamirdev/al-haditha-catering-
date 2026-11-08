@@ -2,9 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
+import dns from 'node:dns';
 import { alHadithaEmployees } from './src/data/employeesData.js';
 import { initialMockData } from './src/data/mockData.js';
 import { harmonizeStateMetrics, defaultNovemberEvents, defaultAlHadithaEvents, defaultAlHadithaEvent } from './src/utils/harmonizeEngine.js';
+
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (_) {}
 
 dotenv.config();
 

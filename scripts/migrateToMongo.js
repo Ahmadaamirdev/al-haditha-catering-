@@ -1,6 +1,11 @@
 import { MongoClient } from 'mongodb';
+import dns from 'node:dns';
 import { alHadithaEmployees } from '../src/data/employeesData.js';
 import { initialMockData } from '../src/data/mockData.js';
+
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (_) {}
 
 const uri = process.env.MONGODB_URI || "mongodb+srv://musahere:jJ56wB0cd1naVLdT@cluster0.fsmczem.mongodb.net/al_haditha_catering?retryWrites=true&w=majority";
 

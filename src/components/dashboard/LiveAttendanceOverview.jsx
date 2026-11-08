@@ -1,10 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { UserCheck, ArrowRight, CheckCircle2, RotateCcw, Utensils, Trash2, PlusCircle } from 'lucide-react';
+import { UserCheck, CheckCircle2, Utensils, Trash2, PlusCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export default function LiveAttendanceOverview() {
-  const { data, resetAllEntriesToZero, deleteMealEntry, recordMealEntry } = useApp();
+  const { data, deleteMealEntry, recordMealEntry } = useApp();
   const { mealEntries = [] } = data;
 
   const todayIso = '2026-11-08';
@@ -43,27 +42,6 @@ export default function LiveAttendanceOverview() {
               Real-time attendance recorded from the Entry Kiosk ({todayEntriesCount} logged today)
             </p>
           </div>
-        </div>
-
-        <div className="flex items-center space-x-2.5">
-          {/* Reset to 0 Button for Testing */}
-          <button
-            onClick={resetAllEntriesToZero}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-surface-border bg-white hover:bg-slate-50 text-xs font-semibold text-slate-secondary hover:text-slate-primary transition-colors"
-            title="Reset all check-in entries to 0 for a clean test"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset to 0</span>
-          </button>
-
-          {/* Open Kiosk Link */}
-          <Link
-            to="/entry"
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-brand-green hover:bg-brand-green-hover text-white text-xs font-semibold shadow-pill transition-all hover:scale-[1.02]"
-          >
-            <span>Open Entry Kiosk</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
         </div>
       </div>
 

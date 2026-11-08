@@ -73,9 +73,9 @@ export const initialMockData = {
       { category: 'Senior', remaining: 1650, status: 'Left' },
       { category: 'VIP', remaining: 850, status: 'Left' },
     ],
-    monthlyTotalBudget: 65000,
+    monthlyTotalBudget: 39600,
     monthlyExpenditure: 0,
-    monthlyRemaining: 65000,
+    monthlyRemaining: 39600,
     utilizationRate: 0,
     monthlyHistory: [
       { month: 'Jul', budget: 62000, actual: 58000 },

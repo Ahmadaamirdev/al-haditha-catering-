@@ -57,19 +57,26 @@ export default function Finance() {
   // Date Filtering State for Variance & Budget Difference
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
-  const [activePreset, setActivePreset] = useState('all'); // 'all' | 'today' | 'custom'
+  const [activePreset, setActivePreset] = useState('month'); // 'today' | 'month' | 'custom'
   const todayStr = '2026-11-08';
-
-  const handleSelectAllDates = () => {
-    setActivePreset('all');
-    setFilterStartDate('');
-    setFilterEndDate('');
-  };
+  const startOfMonthStr = '2026-11-01';
 
   const handleSelectToday = () => {
     setActivePreset('today');
     setFilterStartDate(todayStr);
     setFilterEndDate(todayStr);
+  };
+
+  const handleSelectThisMonth = () => {
+    setActivePreset('month');
+    setFilterStartDate(startOfMonthStr);
+    setFilterEndDate(todayStr);
+  };
+
+  const handleClearFilter = () => {
+    setActivePreset('custom');
+    setFilterStartDate('');
+    setFilterEndDate('');
   };
 
   // Event Financial Calendar State
@@ -358,21 +365,10 @@ export default function Finance() {
             )}
           </div>
 
-          {/* Right-aligned Presets (All Dates & Today) and Start / End Date Inputs */}
+          {/* Right-aligned Presets (Today & This Month) and Start / End Date Inputs */}
           <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2.5">
-            {/* Presets: Only All Dates and Today */}
+            {/* Presets: Today and This Month (replacing All Dates) */}
             <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleSelectAllDates}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                  activePreset === 'all'
-                    ? 'bg-brand-green text-white shadow-pill font-bold'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                All Dates
-              </button>
               <button
                 type="button"
                 onClick={handleSelectToday}
@@ -383,6 +379,17 @@ export default function Finance() {
                 }`}
               >
                 Today
+              </button>
+              <button
+                type="button"
+                onClick={handleSelectThisMonth}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                  activePreset === 'month'
+                    ? 'bg-brand-green text-white shadow-pill font-bold'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                This Month
               </button>
             </div>
 
@@ -417,7 +424,7 @@ export default function Finance() {
               {(filterStartDate || filterEndDate) && (
                 <button
                   type="button"
-                  onClick={handleSelectAllDates}
+                  onClick={handleClearFilter}
                   className="flex items-center space-x-1 text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                   title="Clear Date Filter"
                 >
@@ -432,30 +439,18 @@ export default function Finance() {
 
       {/* Macro Monthly Budget Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 1. Total Allocated Regular Mess Budget (Excluding Events) */}
         <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card">
           <span className="text-xs font-medium text-slate-secondary">Total Allocated Budget</span>
           <p className="text-2xl font-bold text-slate-primary mt-1">
             {(filterStartDate || filterEndDate ? periodAllocatedBenchmark : fin.totalBudget).toLocaleString()} {currency}
           </p>
           <div className="flex items-center space-x-1 text-xs text-slate-muted mt-2">
-            <span>{filterStartDate || filterEndDate ? `Prorated Benchmark (${daysInScope} Days)` : 'Approved by Finance Board'}</span>
+            <span>{filterStartDate || filterEndDate ? `Prorated Benchmark (${daysInScope} Days)` : 'Approved by Finance Board (Mess Only)'}</span>
           </div>
         </div>
 
-        {/* Special Event Catering Budget - Prominently Displayed */}
-        <div className="bg-gradient-to-br from-amber-50/90 to-orange-50/50 p-5 rounded-2xl border border-amber-200 shadow-card relative overflow-hidden">
-          <div>
-            <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">Special Event Budget</span>
-          </div>
-          <p className="text-2xl font-black text-amber-950 mt-1">
-            {filteredEventExpenditure.toLocaleString()} {currency}
-          </p>
-          <div className="flex items-center space-x-1 text-xs text-amber-800 mt-2 font-medium">
-            <CalendarDays className="w-3.5 h-3.5" />
-            <span>Dedicated Banquet & Event Pool</span>
-          </div>
-        </div>
-
+        {/* 2. Daily Mess Realized Cost */}
         <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card">
           <span className="text-xs font-medium text-slate-secondary">Daily Mess Realized Cost</span>
           <p className="text-2xl font-bold text-[#1684AA] mt-1">
@@ -467,14 +462,29 @@ export default function Finance() {
           </div>
         </div>
 
+        {/* 3. Remaining Operating Buffer (Regular Mess Only, Event Budget Not Subtracted) */}
         <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card">
           <span className="text-xs font-medium text-slate-secondary">Remaining Operating Buffer</span>
           <p className="text-2xl font-bold text-[#009B4D] mt-1">
-            {Math.max(0, (filterStartDate || filterEndDate ? periodAllocatedBenchmark : fin.totalBudget) - filteredMessSpent - filteredEventExpenditure).toLocaleString()} {currency}
+            {Math.max(0, (filterStartDate || filterEndDate ? periodAllocatedBenchmark : fin.totalBudget) - filteredMessSpent).toLocaleString()} {currency}
           </p>
           <div className="flex items-center space-x-1 text-xs text-brand-green mt-2 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Available Operating Liquidity</span>
+          </div>
+        </div>
+
+        {/* 4. Special Event Catering Budget - Moved to the Last Position */}
+        <div className="bg-gradient-to-br from-amber-50/90 to-orange-50/50 p-5 rounded-2xl border border-amber-200 shadow-card relative overflow-hidden">
+          <div>
+            <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">Special Event Budget</span>
+          </div>
+          <p className="text-2xl font-black text-amber-950 mt-1">
+            {filteredEventExpenditure.toLocaleString()} {currency}
+          </p>
+          <div className="flex items-center space-x-1 text-xs text-amber-800 mt-2 font-medium">
+            <CalendarDays className="w-3.5 h-3.5" />
+            <span>Dedicated Banquet & Event Pool</span>
           </div>
         </div>
       </div>

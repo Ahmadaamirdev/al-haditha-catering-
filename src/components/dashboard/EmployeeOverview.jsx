@@ -173,16 +173,16 @@ export default function EmployeeOverview() {
         </div>
       </div>
 
-      {/* Category Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-        {/* Junior */}
-        <div className="space-y-3">
+      {/* Category Cards Grid: Divided into two distinct blocks with equal full-width bar lengths */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 pt-1">
+        {/* Junior Block */}
+        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/90 bg-slate-50/70 shadow-2xs space-y-3.5">
           <div className="flex items-start space-x-3.5">
             <div className="w-11 h-11 rounded-full bg-brand-green-light flex items-center justify-center text-brand-green flex-shrink-0">
               <User className="w-5 h-5 text-brand-green" />
             </div>
             <div>
-              <span className="text-xs font-medium text-slate-secondary">Junior</span>
+              <span className="text-xs font-semibold text-slate-secondary">Junior</span>
               <p className="text-2xl font-bold text-slate-primary tracking-tight leading-tight mt-0.5">
                 {stats.junior.total}
               </p>
@@ -193,22 +193,24 @@ export default function EmployeeOverview() {
             </div>
           </div>
           {/* Progress bar */}
-          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-brand-green rounded-full transition-all duration-500"
-              style={{ width: `${stats.junior.percentage}%` }}
-            />
+          <div className="w-full">
+            <div className="h-2.5 w-full bg-slate-200/80 rounded-full border border-slate-300/90 shadow-2xs overflow-hidden p-[1px]">
+              <div
+                className="h-full bg-brand-green rounded-full shadow-xs transition-all duration-500"
+                style={{ width: `${stats.junior.percentage}%` }}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Senior */}
-        <div className="space-y-3">
+        {/* Senior Block */}
+        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/90 bg-slate-50/70 shadow-2xs space-y-3.5">
           <div className="flex items-start space-x-3.5">
             <div className="w-11 h-11 rounded-full bg-brand-blue-light flex items-center justify-center text-brand-blue flex-shrink-0">
               <Users className="w-5 h-5 text-brand-blue" />
             </div>
             <div>
-              <span className="text-xs font-medium text-slate-secondary">Senior</span>
+              <span className="text-xs font-semibold text-slate-secondary">Senior</span>
               <p className="text-2xl font-bold text-slate-primary tracking-tight leading-tight mt-0.5">
                 {stats.senior.total}
               </p>
@@ -219,11 +221,13 @@ export default function EmployeeOverview() {
             </div>
           </div>
           {/* Progress bar */}
-          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-brand-blue rounded-full transition-all duration-500"
-              style={{ width: `${stats.senior.percentage}%` }}
-            />
+          <div className="w-full">
+            <div className="h-2.5 w-full bg-slate-200/80 rounded-full border border-slate-300/90 shadow-2xs overflow-hidden p-[1px]">
+              <div
+                className="h-full bg-brand-blue rounded-full shadow-xs transition-all duration-500"
+                style={{ width: `${stats.senior.percentage}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>

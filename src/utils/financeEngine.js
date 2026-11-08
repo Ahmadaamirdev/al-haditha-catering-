@@ -3,17 +3,16 @@
  * Synchronizes category expenditures, monthly allocation pools, and remaining liquidity directly with real meal entries.
  */
 
-// Monthly budget pool configuration totaling 65,000 OMR approved by Finance Board:
+// Monthly regular mess budget pool approved by Finance Board (excluding special events):
 // 1. Junior Category: 40 staff * 22 working days * 3 meals = 2,640 meals * 5 OMR = 13,200 OMR
 // 2. Senior Category: 40 staff * 22 working days * 3 meals = 2,640 meals * 10 OMR = 26,400 OMR
-// 3. VIP Category: 20 staff * 22 working days * 3 meals * 20 OMR pool (26,400 standard, base 25,400 + 1,000 reserve = 25,400 OMR)
-// Total = 13,200 + 26,400 + 25,400 = 65,000 OMR
+// Total Regular Mess Budget = 13,200 + 26,400 = 39,600 OMR (Events are tracked independently)
 
 export const BASE_CATEGORY_BUDGETS = {
   junior: 13200,
   senior: 26400,
-  vip: 25400,
-  total: 65000,
+  vip: 0,
+  total: 39600,
 };
 
 export function computeCategoryFinance({ financeOverview = {}, mealEntries = [] }) {
@@ -30,12 +29,13 @@ export function computeCategoryFinance({ financeOverview = {}, mealEntries = [] 
   const jrSpent = jrMeals * jrRate;
   const srSpent = srMeals * srRate;
   const vipSpent = vipMeals * vipRate;
-  const totalActual = jrSpent + srSpent + vipSpent;
+  // Daily mess realized cost (excluding special events)
+  const totalActual = jrSpent + srSpent;
 
   const jrBudget = BASE_CATEGORY_BUDGETS.junior;
   const srBudget = BASE_CATEGORY_BUDGETS.senior;
   const vipBudget = BASE_CATEGORY_BUDGETS.vip;
-  const totalBudget = financeOverview?.monthlyTotalBudget || BASE_CATEGORY_BUDGETS.total;
+  const totalBudget = BASE_CATEGORY_BUDGETS.total;
 
   const jrRemaining = Math.max(0, jrBudget - jrSpent);
   const srRemaining = Math.max(0, srBudget - srSpent);
