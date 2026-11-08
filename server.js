@@ -83,9 +83,23 @@ app.get('/api/data', async (req, res) => {
 
     // Always retrieve latest events from events collection
     const eventsCol = database.collection('events');
-    let dbEvents = await eventsCol.find({}).toArray();
-    // Clean out temporary test events
-    dbEvents = dbEvents.filter((e) => e.id !== 'EVT-1000' && e.id !== 'EVT-1002');
+    let rawEvents = await eventsCol.find({}).toArray();
+    // Clean out temporary test events and deduplicate by id
+    const eventMap = new Map();
+    rawEvents.forEach((e) => {
+      if (e && e.id && e.id !== 'EVT-1000' && e.id !== 'EVT-1002' && !eventMap.has(e.id)) {
+        eventMap.set(e.id, e);
+      }
+    });
+    let dbEvents = Array.from(eventMap.values());
+    if (dbEvents.length === 0) {
+      dbEvents = defaultNovemberEvents;
+      await eventsCol.deleteMany({});
+      await eventsCol.insertMany(dbEvents);
+    } else if (dbEvents.length !== rawEvents.length) {
+      await eventsCol.deleteMany({});
+      await eventsCol.insertMany(dbEvents.map(({ _id, ...rest }) => rest));
+    }
 
     if (!state) {
       state = {
@@ -146,9 +160,16 @@ app.post('/api/data', async (req, res) => {
       await mealEntriesCol.insertMany(cleanEntries);
     }
 
-    // Save events directly as requested by client (allows deletions)
+    // Synchronize events from client (allows deletions, deduplicates, and filters test events)
     let clientEvents = Array.isArray(req.body.events) ? req.body.events : [];
-    const cleanEvents = clientEvents.map((evt) => {
+    const eventMap = new Map();
+    clientEvents.forEach((evt) => {
+      if (evt && evt.id && evt.id !== 'EVT-1000' && evt.id !== 'EVT-1002' && !eventMap.has(evt.id)) {
+        eventMap.set(evt.id, evt);
+      }
+    });
+    const finalEvents = Array.from(eventMap.values());
+    const cleanEvents = finalEvents.map((evt) => {
       const { _id, ...rest } = evt;
       return rest;
     });
@@ -157,7 +178,6 @@ app.post('/api/data', async (req, res) => {
     if (cleanEvents.length > 0) {
       await eventsCol.insertMany(cleanEvents);
     }
-    const finalEvents = cleanEvents;
 
     const fullState = {
       ...req.body,

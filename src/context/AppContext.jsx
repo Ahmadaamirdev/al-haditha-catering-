@@ -6,7 +6,7 @@ import { computeCategoryFinance } from '../utils/financeEngine';
 import { harmonizeStateMetrics, defaultNovemberEvents, defaultAlHadithaEvents, defaultAlHadithaEvent } from '../utils/harmonizeEngine';
 
 const AppContext = createContext(null);
-const STORAGE_KEY = 'alhaditha_mess_clean_v3';
+const STORAGE_KEY = 'alhaditha_mess_clean_v4';
 
 export function AppProvider({ children }) {
   const [data, setData] = useState(() => {
@@ -30,9 +30,14 @@ export function AppProvider({ children }) {
         });
         parsed.mealEntries = mergedEntries;
 
-        // Clean saved events (purge unwanted legacy test events)
-        const cleanSavedEvents = (parsed.events || []).filter((e) => e.id !== 'EVT-1000' && e.id !== 'EVT-1002');
-        parsed.events = cleanSavedEvents;
+        // Clean saved events (purge unwanted legacy test events and deduplicate)
+        const eventMap = new Map();
+        (parsed.events || []).forEach((e) => {
+          if (e && e.id && e.id !== 'EVT-1000' && e.id !== 'EVT-1002' && !eventMap.has(e.id)) {
+            eventMap.set(e.id, e);
+          }
+        });
+        parsed.events = Array.from(eventMap.values());
 
         return harmonizeStateMetrics(parsed);
       }
@@ -99,15 +104,22 @@ export function AppProvider({ children }) {
                 });
                 mergedData.mealEntries = Array.from(entryMap.values());
 
-                // 2. Events: Prioritize MongoDB events if available, otherwise preserve local state
-                if (Array.isArray(mongoData.events)) {
-                  mergedData.events = mongoData.events.filter((e) => e.id !== 'EVT-1000' && e.id !== 'EVT-1002');
-                } else if (Array.isArray(localData.events)) {
-                  mergedData.events = localData.events.filter((e) => e.id !== 'EVT-1000' && e.id !== 'EVT-1002');
-                }
+                // 2. Events: Prioritize MongoDB events if available, otherwise preserve local state (deduplicated)
+                const sourceEvents = Array.isArray(mongoData.events)
+                  ? mongoData.events
+                  : (Array.isArray(localData.events) ? localData.events : []);
+                const eventMap = new Map();
+                sourceEvents.forEach((evt) => {
+                  if (evt && evt.id && evt.id !== 'EVT-1000' && evt.id !== 'EVT-1002' && !eventMap.has(evt.id)) {
+                    eventMap.set(evt.id, evt);
+                  }
+                });
+                mergedData.events = Array.from(eventMap.values());
               } catch {
                 // Ignore parse errors
               }
+            } else if (!mergedData.events || mergedData.events.length === 0) {
+              mergedData.events = defaultNovemberEvents;
             }
 
             // Harmonize all metrics (Employee Overview eating counts, Wastage consumed, Finance)

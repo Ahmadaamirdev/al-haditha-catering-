@@ -163,9 +163,10 @@ export default function Finance() {
   // Date Filtering State for Variance & Budget Difference
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
-  const [activePreset, setActivePreset] = useState('month'); // 'today' | 'month' | 'custom'
+  const [activePreset, setActivePreset] = useState('all'); // 'today' | 'month' | 'custom' | 'all'
   const todayStr = '2026-11-08';
   const startOfMonthStr = '2026-11-01';
+  const endOfMonthStr = '2026-11-30';
 
   const handleSelectToday = () => {
     setActivePreset('today');
@@ -176,17 +177,64 @@ export default function Finance() {
   const handleSelectThisMonth = () => {
     setActivePreset('month');
     setFilterStartDate(startOfMonthStr);
-    setFilterEndDate(todayStr);
+    setFilterEndDate(endOfMonthStr);
   };
 
   const handleClearFilter = () => {
-    setActivePreset('custom');
+    setActivePreset('all');
     setFilterStartDate('');
     setFilterEndDate('');
-  };  // Total Event Expenditure across all scheduled events
-  const totalEventExpenditure = useMemo(() => {
-    return events.reduce((sum, ev) => sum + (ev.overallBudget || 0), 0);
+  };
+
+  // Deduplicate and sanitize events strictly matching Events section
+  const uniqueEvents = useMemo(() => {
+    const map = new Map();
+    events.forEach((ev) => {
+      if (ev && ev.id && ev.id !== 'EVT-1000' && ev.id !== 'EVT-1002' && !map.has(ev.id)) {
+        map.set(ev.id, ev);
+      }
+    });
+    return Array.from(map.values());
   }, [events]);
+
+  // Accurate event-month matcher matching Events module logic
+  const isEventInCalendarMonth = (ev, year, monthIdx) => {
+    const dateStr = ev.fullDate || ev.date;
+    if (dateStr) {
+      const matchYMD = String(dateStr).match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      if (matchYMD) {
+        return parseInt(matchYMD[1], 10) === year && (parseInt(matchYMD[2], 10) - 1) === monthIdx;
+      }
+      const matchDMY = String(dateStr).match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+      if (matchDMY) {
+        return parseInt(matchDMY[3], 10) === year && (parseInt(matchDMY[2], 10) - 1) === monthIdx;
+      }
+    }
+    const monthAbbr = monthNames[monthIdx].slice(0, 3).toLowerCase();
+    const evMonth = (ev.month || '').toLowerCase();
+    const evYear = ev.year ? parseInt(ev.year, 10) : 2026;
+    return evMonth.startsWith(monthAbbr) && evYear === year;
+  };
+
+  const getEventDay = (ev) => {
+    const dateStr = ev.fullDate || ev.date;
+    if (dateStr) {
+      const matchYMD = String(dateStr).match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      if (matchYMD) return parseInt(matchYMD[3], 10);
+      const matchDMY = String(dateStr).match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+      if (matchDMY) return parseInt(matchDMY[1], 10);
+    }
+    return parseInt(ev.day, 10);
+  };
+
+  // Events strictly scheduled in the viewed calendar month
+  const calendarMonthEvents = useMemo(() => {
+    return uniqueEvents.filter((ev) => isEventInCalendarMonth(ev, calendarYear, calendarMonthIdx));
+  }, [uniqueEvents, calendarYear, calendarMonthIdx]);
+
+  const calendarMonthEventBudget = useMemo(() => {
+    return calendarMonthEvents.reduce((sum, ev) => sum + (ev.overallBudget || 0), 0);
+  }, [calendarMonthEvents]);
 
   // Fast string-based range check without regex or Date allocations
   const isDateInRange = (dateStr, start, end) => {
@@ -200,8 +248,8 @@ export default function Finance() {
 
   // Filtered Events within selected date range
   const filteredEvents = useMemo(() => {
-    return events.filter((ev) => isDateInRange(ev.fullDate, filterStartDate, filterEndDate));
-  }, [events, filterStartDate, filterEndDate]);
+    return uniqueEvents.filter((ev) => isDateInRange(ev.fullDate, filterStartDate, filterEndDate));
+  }, [uniqueEvents, filterStartDate, filterEndDate]);
 
   // Filtered Event Expenditure
   const filteredEventExpenditure = useMemo(() => {
@@ -252,27 +300,18 @@ export default function Finance() {
   const leadingBlanks = Array.from({ length: firstDayOfWeek });
   const monthDays = Array.from({ length: totalDaysInMonth }, (_, i) => i + 1);
 
-  // Pre-index events by day to avoid re-filtering on every cell render
+  // Pre-index only the events present in the active calendar month
   const eventsByDay = useMemo(() => {
     const map = {};
-    events.forEach((ev) => {
-      let d = null;
-      if (ev.fullDate) {
-        const parts = ev.fullDate.split('-');
-        if (parts.length === 3 && parseInt(parts[0], 10) === calendarYear && (parseInt(parts[1], 10) - 1) === calendarMonthIdx) {
-          d = parseInt(parts[2], 10);
-        }
-      }
-      if (!d && ev.day && (calendarMonthIdx === 10 || ev.month === 'Nov')) {
-        d = parseInt(ev.day, 10);
-      }
-      if (d) {
+    calendarMonthEvents.forEach((ev) => {
+      const d = getEventDay(ev);
+      if (d && d >= 1 && d <= totalDaysInMonth) {
         if (!map[d]) map[d] = [];
         map[d].push(ev);
       }
     });
     return map;
-  }, [events, calendarYear, calendarMonthIdx]);
+  }, [calendarMonthEvents, totalDaysInMonth]);
 
   const handleCalendarDayClick = (dayNum) => {
     const formatted = `${calendarYear}-${String(calendarMonthIdx + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
@@ -429,31 +468,33 @@ export default function Finance() {
       </div>
 
       {/* Date Filter Bar - Positioned directly at top of Macro Budget Cards */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-surface-border shadow-card">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-brand-blue" />
-            <h3 className="text-sm sm:text-base font-bold text-slate-primary">
-              Filter Financial Period & Events
-            </h3>
+      <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-surface-border shadow-card">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+          <div className="flex items-center flex-wrap gap-2">
+            <div className="flex items-center space-x-2">
+              <Filter className="w-4 h-4 text-brand-blue shrink-0" />
+              <h3 className="text-sm sm:text-base font-bold text-slate-primary whitespace-nowrap">
+                Filter Financial Period & Events
+              </h3>
+            </div>
             {(filterStartDate || filterEndDate) && (
-              <span className="text-[11px] font-semibold text-brand-green bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full ml-1">
+              <span className="text-[11px] font-semibold text-brand-green bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                 Active Filter
               </span>
             )}
           </div>
 
           {/* Right-aligned Presets (Today & This Month) and Start / End Date Inputs */}
-          <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2.5">
-            {/* Presets: Today and This Month (replacing All Dates) */}
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start lg:justify-end gap-2.5 w-full lg:w-auto">
+            {/* Presets: Today and This Month */}
+            <div className="inline-flex p-0.5 bg-slate-100/90 rounded-xl shrink-0">
               <button
                 type="button"
                 onClick={handleSelectToday}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   activePreset === 'today'
-                    ? 'bg-brand-green text-white shadow-pill font-bold'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    ? 'bg-brand-green text-white shadow-sm font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
               >
                 Today
@@ -461,20 +502,20 @@ export default function Finance() {
               <button
                 type="button"
                 onClick={handleSelectThisMonth}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   activePreset === 'month'
-                    ? 'bg-brand-green text-white shadow-pill font-bold'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    ? 'bg-brand-green text-white shadow-sm font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
               >
                 This Month
               </button>
             </div>
 
-            {/* Start and End Date Inputs aligned to the right */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center space-x-1.5 bg-slate-50 border border-surface-border rounded-xl px-2.5 py-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">From:</span>
+            {/* Start and End Date Inputs */}
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center space-x-1.5 bg-slate-50 border border-surface-border rounded-xl px-2.5 py-1.5 min-w-0">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap shrink-0">From:</span>
                 <input
                   type="date"
                   value={filterStartDate}
@@ -482,12 +523,12 @@ export default function Finance() {
                     setFilterStartDate(e.target.value);
                     setActivePreset('custom');
                   }}
-                  className="text-xs bg-transparent focus:outline-none text-slate-800"
+                  className="text-xs bg-transparent focus:outline-none text-slate-800 w-full min-w-0 cursor-pointer"
                 />
               </div>
 
-              <div className="flex items-center space-x-1.5 bg-slate-50 border border-surface-border rounded-xl px-2.5 py-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">To:</span>
+              <div className="flex items-center space-x-1.5 bg-slate-50 border border-surface-border rounded-xl px-2.5 py-1.5 min-w-0">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap shrink-0">To:</span>
                 <input
                   type="date"
                   value={filterEndDate}
@@ -495,7 +536,7 @@ export default function Finance() {
                     setFilterEndDate(e.target.value);
                     setActivePreset('custom');
                   }}
-                  className="text-xs bg-transparent focus:outline-none text-slate-800"
+                  className="text-xs bg-transparent focus:outline-none text-slate-800 w-full min-w-0 cursor-pointer"
                 />
               </div>
 
@@ -503,11 +544,11 @@ export default function Finance() {
                 <button
                   type="button"
                   onClick={handleClearFilter}
-                  className="flex items-center space-x-1 text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                  className="col-span-2 sm:col-auto flex items-center justify-center space-x-1 text-xs text-rose-600 hover:text-rose-700 font-bold px-2.5 py-1.5 bg-rose-50/70 hover:bg-rose-100 border border-rose-200/60 rounded-xl transition-colors cursor-pointer shrink-0"
                   title="Clear Date Filter"
                 >
                   <X className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Clear</span>
+                  <span>Clear</span>
                 </button>
               )}
             </div>
@@ -820,8 +861,20 @@ export default function Finance() {
           })}
         </div>
 
-        <div className="pt-3 border-t border-surface-border flex items-center justify-end text-xs text-slate-secondary">
-          <span className="font-semibold text-brand-green">Total Events: {events.length}</span>
+        <div className="pt-3 border-t border-surface-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-secondary">
+          <div className="flex items-center space-x-2">
+            <span className="font-semibold text-brand-green">Scheduled Events: {calendarMonthEvents.length}</span>
+            <span>•</span>
+            <span>Total Dedicated Event Budget: {calendarMonthEventBudget.toLocaleString()} {currency}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/events')}
+            className="flex items-center space-x-1 text-brand-green hover:text-brand-green-hover font-semibold transition-colors cursor-pointer"
+          >
+            <span>Manage in Events Module</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
