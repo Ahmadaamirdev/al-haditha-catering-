@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Wallet, 
@@ -17,18 +17,124 @@ import {
   TrendingUp,
   X,
   Sparkles,
-  Info
+  Info,
+  Utensils,
+  Layers
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { computeCategoryFinance } from '../utils/financeEngine';
+import { calculateMonthCalendar } from '../utils/allocationEngine';
 import Modal from '../components/common/Modal';
 
 export default function Finance() {
   const navigate = useNavigate();
-  const { data, currency, updateCategoryBudget, addToast } = useApp();
+  const { data, currency, updateCategoryBudget, generateMonthlyAllocation, addToast } = useApp();
   const { financeOverview } = data;
   const events = data.events || [];
   const mealEntries = data.mealEntries || [];
+
+  // Month navigation: support 2025, 2026, 2027
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const allMonths = useMemo(() => {
+    const list = [];
+    [2025, 2026, 2027].forEach((yr) => {
+      monthNames.forEach((mName, mIdx) => {
+        list.push({
+          label: `${mName} ${yr}`,
+          year: yr,
+          monthIndex: mIdx,
+          monthName: mName,
+        });
+      });
+    });
+    return list;
+  }, []);
+
+  // Synchronized selected month from AppContext
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    return data.selectedMonth || 'November 2026';
+  });
+
+  useEffect(() => {
+    if (data.selectedMonth) {
+      setSelectedMonth(data.selectedMonth);
+    }
+  }, [data.selectedMonth]);
+
+  const activeMonthObj = useMemo(() => {
+    return allMonths.find((m) => m.label === selectedMonth) || {
+      label: 'November 2026',
+      year: 2026,
+      monthIndex: 10,
+      monthName: 'November',
+    };
+  }, [allMonths, selectedMonth]);
+
+  const calendarYear = activeMonthObj.year;
+  const calendarMonthIdx = activeMonthObj.monthIndex;
+
+  // Real-time calculated month calendar stats (working days, off days, quotas)
+  const calendarStats = useMemo(() => {
+    return calculateMonthCalendar(activeMonthObj.year, activeMonthObj.monthIndex);
+  }, [activeMonthObj]);
+
+  // Calendar Month Picker Popover State
+  const [isCalendarPickerOpen, setIsCalendarPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(activeMonthObj.year);
+  const calendarPickerRef = useRef(null);
+
+  useEffect(() => {
+    setPickerYear(activeMonthObj.year);
+  }, [activeMonthObj.year]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (calendarPickerRef.current && !calendarPickerRef.current.contains(event.target)) {
+        setIsCalendarPickerOpen(false);
+      }
+    };
+    if (isCalendarPickerOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCalendarPickerOpen]);
+
+  // Handle month change and immediately synchronize allocations across the ERP
+  const handleMonthChange = (monthLabel, isUserExplicit = true) => {
+    setSelectedMonth(monthLabel);
+    const targetMonth = allMonths.find((m) => m.label === monthLabel);
+    if (targetMonth) {
+      const stats = calculateMonthCalendar(targetMonth.year, targetMonth.monthIndex);
+      if (generateMonthlyAllocation) {
+        generateMonthlyAllocation(monthLabel, stats.workingDaysCount, !isUserExplicit);
+      }
+    }
+  };
+
+  const selectMonthFromPicker = (monthIndex, yr) => {
+    const targetLabel = `${monthNames[monthIndex]} ${yr}`;
+    handleMonthChange(targetLabel, true);
+    setIsCalendarPickerOpen(false);
+  };
+
+  const currentMonthIdx = allMonths.findIndex((m) => m.label === selectedMonth);
+  const handlePrevMonth = () => {
+    if (currentMonthIdx > 0) {
+      handleMonthChange(allMonths[currentMonthIdx - 1].label, true);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonthIdx < allMonths.length - 1) {
+      handleMonthChange(allMonths[currentMonthIdx + 1].label, true);
+    }
+  };
 
   // Compute live synchronized finance metrics directly from real meal entries
   const fin = useMemo(() => {
@@ -77,17 +183,7 @@ export default function Finance() {
     setActivePreset('custom');
     setFilterStartDate('');
     setFilterEndDate('');
-  };
-
-  // Event Financial Calendar State
-  const [calendarYear, setCalendarYear] = useState(2026);
-  const [calendarMonthIdx, setCalendarMonthIdx] = useState(10); // 10 = November
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  // Total Event Expenditure across all scheduled events
+  };  // Total Event Expenditure across all scheduled events
   const totalEventExpenditure = useMemo(() => {
     return events.reduce((sum, ev) => sum + (ev.overallBudget || 0), 0);
   }, [events]);
@@ -177,24 +273,6 @@ export default function Finance() {
     });
     return map;
   }, [events, calendarYear, calendarMonthIdx]);
-
-  const handlePrevMonth = () => {
-    if (calendarMonthIdx === 0) {
-      setCalendarMonthIdx(11);
-      setCalendarYear((y) => y - 1);
-    } else {
-      setCalendarMonthIdx((m) => m - 1);
-    }
-  };
-
-  const handleNextMonth = () => {
-    if (calendarMonthIdx === 11) {
-      setCalendarMonthIdx(0);
-      setCalendarYear((y) => y + 1);
-    } else {
-      setCalendarMonthIdx((m) => m + 1);
-    }
-  };
 
   const handleCalendarDayClick = (dayNum) => {
     const formatted = `${calendarYear}-${String(calendarMonthIdx + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
@@ -489,6 +567,134 @@ export default function Finance() {
         </div>
       </div>
 
+      {/* Allocation Cycle & Quota Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Selected Cycle Card with Pick Month Popover */}
+        <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card relative flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-secondary">Selected Cycle</span>
+            <div className="relative" ref={calendarPickerRef}>
+              <button
+                type="button"
+                onClick={() => setIsCalendarPickerOpen(!isCalendarPickerOpen)}
+                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
+                  isCalendarPickerOpen
+                    ? 'border-brand-green bg-brand-green text-white shadow-pill font-bold'
+                    : 'border-brand-green/30 bg-brand-green-light/40 text-brand-green hover:bg-brand-green hover:text-white'
+                }`}
+                title="Select month from calendar"
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold">Pick Month</span>
+              </button>
+
+              {/* Calendar Month Picker Popover */}
+              {isCalendarPickerOpen && (
+                <div className="absolute left-0 sm:right-0 sm:left-auto mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-border p-3.5 z-50 animate-fade-in">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-surface-border mb-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setPickerYear((y) => Math.max(2024, y - 1))}
+                      className="p-1 rounded-lg text-slate-secondary hover:text-slate-primary hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Previous Year"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-bold text-slate-primary tracking-wide">
+                      {pickerYear}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPickerYear((y) => Math.min(2030, y + 1))}
+                      className="p-1 rounded-lg text-slate-secondary hover:text-slate-primary hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Next Year"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5 text-xs">
+                    {monthNames.map((name, idx) => {
+                      const isSelected = activeMonthObj.monthIndex === idx && activeMonthObj.year === pickerYear;
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => selectMonthFromPicker(idx, pickerYear)}
+                          className={`py-2 rounded-xl text-center font-semibold text-xs transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-brand-green text-white shadow-pill font-bold'
+                              : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                          }`}
+                        >
+                          {name.slice(0, 3)}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-2.5 pt-2 border-t border-surface-border flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Current: {calendarStats.monthName}</span>
+                    <button
+                      type="button"
+                      onClick={() => selectMonthFromPicker(10, 2026)}
+                      className="text-brand-blue font-bold hover:underline cursor-pointer"
+                    >
+                      Nov 2026
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-2">
+            <p className="text-xl font-bold text-slate-primary">{selectedMonth}</p>
+            <span className="text-[11px] text-brand-green font-semibold">
+              {calendarStats.totalDays} Days in Month
+            </span>
+          </div>
+        </div>
+
+        {/* Working Days Card */}
+        <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-secondary">Working Days</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-brand-green-light text-brand-green">
+              {calendarStats.offDaysCount} Weekend Days Off
+            </span>
+          </div>
+          <p className="text-2xl font-bold text-slate-primary mt-1">{calendarStats.workingDaysCount} Days</p>
+          <span className="text-[11px] text-slate-muted">
+            {calendarStats.fridaysCount} Fri + {calendarStats.saturdaysCount} Sat (0 Credits)
+          </span>
+        </div>
+
+        {/* Daily Allowance Card */}
+        <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-secondary">Daily Allowance</span>
+            <Utensils className="w-4 h-4 text-brand-green" />
+          </div>
+          <p className="text-2xl font-bold text-slate-primary mt-1">3 Meals / Day</p>
+          <span className="text-[11px] text-slate-muted">09:00-10:00 • 14:00-15:00 • 19:00-20:00</span>
+        </div>
+
+        {/* Quota Per Staff Card */}
+        <div className="bg-white p-5 rounded-2xl border border-surface-border shadow-card flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-secondary">Quota Per Staff</span>
+            <Layers className="w-4 h-4 text-brand-blue" />
+          </div>
+          <p className="text-2xl font-bold text-slate-primary mt-1">
+            {calendarStats.allocationsPerEmployee} Meals
+          </p>
+          <span className="text-[11px] text-slate-muted">
+            {calendarStats.workingDaysCount} days &times; 3 meals (80 Staff Total)
+          </span>
+        </div>
+      </div>
+
       {/* Event Financial Calendar */}
       <div className="bg-white rounded-2xl border border-surface-border shadow-card p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-surface-border">
@@ -505,7 +711,8 @@ export default function Finance() {
                   <button
                     type="button"
                     onClick={handlePrevMonth}
-                    className="p-1 rounded-md text-slate-secondary hover:text-slate-primary hover:bg-white transition-colors cursor-pointer"
+                    disabled={currentMonthIdx <= 0}
+                    className="p-1 rounded-md text-slate-secondary hover:text-slate-primary hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     title="Previous Month"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
@@ -513,7 +720,8 @@ export default function Finance() {
                   <button
                     type="button"
                     onClick={handleNextMonth}
-                    className="p-1 rounded-md text-slate-secondary hover:text-slate-primary hover:bg-white transition-colors cursor-pointer"
+                    disabled={currentMonthIdx >= allMonths.length - 1}
+                    className="p-1 rounded-md text-slate-secondary hover:text-slate-primary hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     title="Next Month"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />

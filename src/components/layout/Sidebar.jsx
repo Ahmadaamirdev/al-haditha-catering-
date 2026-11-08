@@ -4,7 +4,6 @@ import {
   Home, 
   PieChart, 
   Wallet, 
-  CalendarCheck, 
   Utensils, 
   CalendarDays, 
   Settings, 
@@ -27,7 +26,6 @@ export default function Sidebar() {
     { name: 'Entry Panel', path: '/entry', icon: UserCheck },
     { name: 'Wastage Control', path: '/wastage', icon: PieChart },
     { name: 'Finance', path: '/finance', icon: Wallet },
-    { name: 'Meal Allocation', path: '/allocation', icon: CalendarCheck },
     { name: 'Events', path: '/events', icon: CalendarDays },
   ];
 
