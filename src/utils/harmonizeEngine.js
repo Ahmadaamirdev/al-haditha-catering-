@@ -1,25 +1,24 @@
 import { computeCategoryFinance } from './financeEngine.js';
 
-// Default preserved events
-export const defaultAlHadithaEvents = [
+// Restored original November 2026 events
+export const defaultNovemberEvents = [
   {
-    id: 'EVT-1000',
-    title: 'Safety Excellence Banquet',
+    id: 'EVT-101',
+    title: 'Annual Gathering',
     day: '15',
-    month: 'Oct',
-    fullDate: '2026-10-15',
-    time: '19:00 - 21:30',
-    location: 'Main Camp Mess Hall',
-    description: 'Quarterly field safety achievements dinner and recognition.',
-    category: 'Corporate / Special Banquet',
+    month: 'Nov',
+    fullDate: '2026-11-15',
+    time: '18:30 - 22:30',
+    invitedCount: 200,
+    expectedCount: 180,
+    perPersonBudget: 20,
+    overallBudget: 3600,
     status: 'Confirmed',
     statusType: 'success',
-    invitedCount: 10,
-    expectedCount: 10,
-    perPersonBudget: 25,
-    overallBudget: 250,
+    description: 'Company annual gathering with special banquet catering.',
     menuChanged: false,
-    menuDetails: 'Buffet with Grilled Meats, Rice, Fresh Salads, Traditional Sweets and Beverages.',
+    menuDetails: 'Buffet with Grilled Meats, Rice, Salads, Desserts and Beverages.',
+    category: 'Corporate / Special Banquet',
     invitedEmployees: []
   },
   {
@@ -43,28 +42,67 @@ export const defaultAlHadithaEvents = [
     invitedEmployees: []
   },
   {
-    id: 'EVT-1002',
-    title: 'Year-End Corporate Banquet',
-    day: '18',
-    month: 'Dec',
-    fullDate: '2026-12-18',
-    time: '19:00 - 22:00',
+    id: 'EVT-8754',
+    title: 'muneeb meetingn',
+    day: '20',
+    month: 'Nov',
+    fullDate: '2026-11-20',
+    time: '18:00 - 21:00',
     location: 'Main Camp Mess Hall',
-    description: 'Annual Al-Haditha personnel appreciation banquet.',
+    description: 'Corporate committee meeting and dinner banquet.',
     category: 'Corporate / Special Banquet',
     status: 'Confirmed',
     statusType: 'success',
-    invitedCount: 12,
-    expectedCount: 12,
+    invitedCount: 10,
+    expectedCount: 10,
     perPersonBudget: 25,
-    overallBudget: 300,
+    overallBudget: 250,
     menuChanged: false,
-    menuDetails: 'Holiday Special Buffet: Roasted Lamb, Biryani, Fresh Mezza, Fruit Platters and Sweets.',
+    menuDetails: 'Buffet with Grilled Meats, Rice, Fresh Salads, Traditional Sweets and Beverages.',
+    invitedEmployees: []
+  },
+  {
+    id: 'EVT-102',
+    title: 'Q4 Safety Excellence Celebration',
+    day: '22',
+    month: 'Nov',
+    fullDate: '2026-11-22',
+    time: '12:30 - 14:30',
+    invitedCount: 350,
+    expectedCount: 320,
+    perPersonBudget: 15,
+    overallBudget: 4800,
+    status: 'Confirmed',
+    statusType: 'warning',
+    description: 'Honoring zero lost-time injury milestone across solar and desert field camps.',
+    menuChanged: false,
+    menuDetails: 'BBQ Special: Mixed Grill skewers, Biryani, Caesar Salad, Traditional Halwa and Kahwa.',
+    category: 'Corporate / Special Banquet',
+    invitedEmployees: []
+  },
+  {
+    id: 'EVT-103',
+    title: 'Board of Directors Luncheon',
+    day: '28',
+    month: 'Nov',
+    fullDate: '2026-11-28',
+    time: '13:00 - 15:00',
+    invitedCount: 25,
+    expectedCount: 25,
+    perPersonBudget: 35,
+    overallBudget: 875,
+    status: 'Confirmed',
+    statusType: 'success',
+    description: 'Executive Board dining with executive culinary service.',
+    menuChanged: false,
+    menuDetails: 'Executive 5-Course Plated Service: Lobster Bisque, Wagyu Tenderloin / Seared Sea Bass, Date Pudding with Cardamom Gelato.',
+    category: 'Corporate / Special Banquet',
     invitedEmployees: []
   }
 ];
 
-export const defaultAlHadithaEvent = defaultAlHadithaEvents[1];
+export const defaultAlHadithaEvents = defaultNovemberEvents;
+export const defaultAlHadithaEvent = defaultNovemberEvents[1];
 
 // Central helper to dynamically synchronize all dashboard metrics directly with actual mealEntries
 export function harmonizeStateMetrics(state) {

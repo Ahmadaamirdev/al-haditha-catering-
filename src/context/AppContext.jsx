@@ -3,7 +3,7 @@ import { initialMockData } from '../data/mockData';
 import { alHadithaEmployees, matchEmployeeByIdAndName } from '../data/employeesData';
 import { getEmployeeRealtimeAllocations, calculateMonthCalendar, MEAL_WINDOWS, isEntryInMonthOrDate } from '../utils/allocationEngine';
 import { computeCategoryFinance } from '../utils/financeEngine';
-import { harmonizeStateMetrics, defaultAlHadithaEvents, defaultAlHadithaEvent } from '../utils/harmonizeEngine';
+import { harmonizeStateMetrics, defaultNovemberEvents, defaultAlHadithaEvents, defaultAlHadithaEvent } from '../utils/harmonizeEngine';
 
 const AppContext = createContext(null);
 const STORAGE_KEY = 'alhaditha_mess_clean_v3';
@@ -30,10 +30,11 @@ export function AppProvider({ children }) {
         });
         parsed.mealEntries = mergedEntries;
 
-        // Ensure default multi-month events are present
-        const existingEvtIds = new Set((parsed.events || []).map((e) => e.id));
-        const mergedEvents = [...(parsed.events || [])];
-        defaultAlHadithaEvents.forEach((ev) => {
+        // Ensure restored original November events are present, purging any non-November test events
+        const cleanSavedEvents = (parsed.events || []).filter((e) => e.id !== 'EVT-1000' && e.id !== 'EVT-1002');
+        const existingEvtIds = new Set(cleanSavedEvents.map((e) => e.id));
+        const mergedEvents = [...cleanSavedEvents];
+        defaultNovemberEvents.forEach((ev) => {
           if (!existingEvtIds.has(ev.id)) {
             mergedEvents.push(ev);
           }
@@ -48,7 +49,7 @@ export function AppProvider({ children }) {
     return harmonizeStateMetrics({
       ...initialMockData,
       employees: alHadithaEmployees,
-      events: defaultAlHadithaEvents,
+      events: defaultNovemberEvents,
     });
   });
 
