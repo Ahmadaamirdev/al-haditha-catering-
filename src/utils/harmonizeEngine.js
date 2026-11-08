@@ -159,10 +159,8 @@ export function harmonizeStateMetrics(state) {
     budgetStatus: fin.budgetStatus,
   };
 
-  // 4. Events safeguard
-  const currentEvents = Array.isArray(state.events) && state.events.length > 0 
-    ? state.events 
-    : [defaultAlHadithaEvent];
+  // 4. Events safeguard (preserves empty array or user modifications/deletions)
+  const currentEvents = Array.isArray(state.events) ? state.events : [];
 
   // 5. Current Month & Date synchronization (dynamically defaults to current date/month)
   const now = new Date();

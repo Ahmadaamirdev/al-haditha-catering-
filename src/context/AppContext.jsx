@@ -30,16 +30,9 @@ export function AppProvider({ children }) {
         });
         parsed.mealEntries = mergedEntries;
 
-        // Ensure restored original November events are present, purging any non-November test events
+        // Clean saved events (purge unwanted legacy test events)
         const cleanSavedEvents = (parsed.events || []).filter((e) => e.id !== 'EVT-1000' && e.id !== 'EVT-1002');
-        const existingEvtIds = new Set(cleanSavedEvents.map((e) => e.id));
-        const mergedEvents = [...cleanSavedEvents];
-        defaultNovemberEvents.forEach((ev) => {
-          if (!existingEvtIds.has(ev.id)) {
-            mergedEvents.push(ev);
-          }
-        });
-        parsed.events = mergedEvents;
+        parsed.events = cleanSavedEvents;
 
         return harmonizeStateMetrics(parsed);
       }
@@ -106,20 +99,15 @@ export function AppProvider({ children }) {
                 });
                 mergedData.mealEntries = Array.from(entryMap.values());
 
-                // 2. Merge Events
-                const localEvents = localData.events || [];
-                const mongoEvents = mongoData.events || [];
-                const eventMap = new Map();
-                [...localEvents, ...mongoEvents].forEach((evt) => {
-                  if (evt && evt.id) eventMap.set(evt.id, evt);
-                });
-                const combinedEvents = Array.from(eventMap.values());
-                mergedData.events = combinedEvents.length > 0 ? combinedEvents : [defaultAlHadithaEvent];
+                // 2. Events: Prioritize MongoDB events if available, otherwise preserve local state
+                if (Array.isArray(mongoData.events)) {
+                  mergedData.events = mongoData.events.filter((e) => e.id !== 'EVT-1000' && e.id !== 'EVT-1002');
+                } else if (Array.isArray(localData.events)) {
+                  mergedData.events = localData.events.filter((e) => e.id !== 'EVT-1000' && e.id !== 'EVT-1002');
+                }
               } catch {
                 // Ignore parse errors
               }
-            } else if (!mergedData.events || mergedData.events.length === 0) {
-              mergedData.events = [defaultAlHadithaEvent];
             }
 
             // Harmonize all metrics (Employee Overview eating counts, Wastage consumed, Finance)
@@ -290,10 +278,26 @@ export function AppProvider({ children }) {
   };
 
   const deleteEvent = (eventId) => {
-    setData((prev) => ({
-      ...prev,
-      events: (prev.events || []).filter((evt) => evt.id !== eventId),
-    }));
+    setData((prev) => {
+      const remaining = (prev.events || []).filter((evt) => evt.id !== eventId);
+      const updated = {
+        ...prev,
+        events: remaining,
+      };
+      // Immediate post to MongoDB Atlas
+      fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'Professional/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).catch(() => {});
+      return updated;
+    });
+
+    // Also call DELETE endpoint directly
+    fetch(`/api/events/${eventId}`, {
+      method: 'DELETE',
+    }).catch(() => {});
+
     addToast('Event removed.', 'info');
   };
 

@@ -86,15 +86,6 @@ app.get('/api/data', async (req, res) => {
     let dbEvents = await eventsCol.find({}).toArray();
     // Clean out temporary test events
     dbEvents = dbEvents.filter((e) => e.id !== 'EVT-1000' && e.id !== 'EVT-1002');
-    const existingIds = new Set(dbEvents.map((e) => e.id));
-    const toAdd = defaultNovemberEvents.filter((e) => !existingIds.has(e.id));
-    if (toAdd.length > 0 || (await eventsCol.countDocuments({ id: { $in: ['EVT-1000', 'EVT-1002'] } })) > 0) {
-      await eventsCol.deleteMany({ id: { $in: ['EVT-1000', 'EVT-1002'] } });
-      if (toAdd.length > 0) {
-        await eventsCol.insertMany(toAdd);
-      }
-      dbEvents = await eventsCol.find({}).toArray();
-    }
 
     if (!state) {
       state = {
@@ -155,22 +146,18 @@ app.post('/api/data', async (req, res) => {
       await mealEntriesCol.insertMany(cleanEntries);
     }
 
-    // Smart merge events
+    // Save events directly as requested by client (allows deletions)
     let clientEvents = Array.isArray(req.body.events) ? req.body.events : [];
-    const dbEvents = await eventsCol.find({}).toArray();
-    const eventMap = new Map();
-    [...dbEvents, ...clientEvents].forEach((evt) => {
-      if (evt && evt.id) eventMap.set(evt.id, evt);
-    });
-    const mergedEvents = Array.from(eventMap.values());
-    const finalEvents = mergedEvents.length > 0 ? mergedEvents : [defaultAlHadithaEvent];
-    const cleanEvents = finalEvents.map((evt) => {
+    const cleanEvents = clientEvents.map((evt) => {
       const { _id, ...rest } = evt;
       return rest;
     });
 
     await eventsCol.deleteMany({});
-    await eventsCol.insertMany(cleanEvents);
+    if (cleanEvents.length > 0) {
+      await eventsCol.insertMany(cleanEvents);
+    }
+    const finalEvents = cleanEvents;
 
     const fullState = {
       ...req.body,
@@ -231,6 +218,36 @@ app.post('/api/meal-entries', async (req, res) => {
 });
 
 // DELETE /api/meal-entries/:id - Delete single meal check-in
+// DELETE /api/events/:id - Delete single event
+app.delete('/api/events/:id', async (req, res) => {
+  try {
+    const database = await connectToMongo();
+    const { id } = req.params;
+    await database.collection('events').deleteOne({ id });
+
+    const allEvents = await database.collection('events').find({}).toArray();
+    const stateCol = database.collection('appState');
+    const state = await stateCol.findOne({ _id: 'current_state' });
+
+    const harmonized = harmonizeStateMetrics({
+      ...(state || {}),
+      events: allEvents,
+      updatedAt: new Date()
+    });
+
+    await stateCol.updateOne(
+      { _id: 'current_state' },
+      { $set: harmonized },
+      { upsert: true }
+    );
+
+    res.json({ success: true, deletedId: id, harmonized });
+  } catch (err) {
+    console.error('Error deleting event from MongoDB:', err);
+    res.status(500).json({ error: 'Failed to delete event', details: err.message });
+  }
+});
+
 app.delete('/api/meal-entries/:id', async (req, res) => {
   try {
     const database = await connectToMongo();
