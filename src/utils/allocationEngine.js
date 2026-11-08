@@ -318,9 +318,9 @@ export function getEmployeeRealtimeAllocations({
     };
   }
 
-  // Calculate remaining allocations: every consumed meal minuses 1 allocation from monthly quota
-  const totalDeducted = consumedCount + expiredCount;
-  const remainingMonthlyAllocations = Math.max(0, totalMonthlyQuota - totalDeducted);
+  // Calculate remaining allocations: strictly monthly quota minus consumed meals
+  const totalDeducted = consumedCount;
+  const remainingMonthlyAllocations = Math.max(0, totalMonthlyQuota - consumedCount);
 
   // Today remaining meals count
   let todayRemainingCount = 0;

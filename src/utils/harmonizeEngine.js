@@ -1,26 +1,70 @@
 import { computeCategoryFinance } from './financeEngine.js';
 
 // Default preserved events
-export const defaultAlHadithaEvent = {
-  id: 'EVT-1001',
-  title: 'al haditha meeting',
-  day: '20',
-  month: 'Nov',
-  fullDate: '2026-11-20',
-  time: '18:00 - 21:00',
-  location: 'Main Camp Mess Hall',
-  description: 'Executive board and catering committee quarterly dinner.',
-  category: 'VIP',
-  status: 'Confirmed',
-  statusType: 'success',
-  invitedCount: 8,
-  expectedCount: 8,
-  perPersonBudget: 30,
-  overallBudget: 240,
-  menuChanged: false,
-  menuDetails: 'Executive VIP Banquet: Grilled Lamb, Fresh Saffron Rice, Mezza and Arabic Sweets.',
-  invitedEmployees: []
-};
+export const defaultAlHadithaEvents = [
+  {
+    id: 'EVT-1000',
+    title: 'Safety Excellence Banquet',
+    day: '15',
+    month: 'Oct',
+    fullDate: '2026-10-15',
+    time: '19:00 - 21:30',
+    location: 'Main Camp Mess Hall',
+    description: 'Quarterly field safety achievements dinner and recognition.',
+    category: 'Corporate / Special Banquet',
+    status: 'Confirmed',
+    statusType: 'success',
+    invitedCount: 10,
+    expectedCount: 10,
+    perPersonBudget: 25,
+    overallBudget: 250,
+    menuChanged: false,
+    menuDetails: 'Buffet with Grilled Meats, Rice, Fresh Salads, Traditional Sweets and Beverages.',
+    invitedEmployees: []
+  },
+  {
+    id: 'EVT-1001',
+    title: 'al haditha meeting',
+    day: '20',
+    month: 'Nov',
+    fullDate: '2026-11-20',
+    time: '18:00 - 21:00',
+    location: 'Main Camp Mess Hall',
+    description: 'Executive board and catering committee quarterly dinner.',
+    category: 'Corporate / Special Banquet',
+    status: 'Confirmed',
+    statusType: 'success',
+    invitedCount: 8,
+    expectedCount: 8,
+    perPersonBudget: 30,
+    overallBudget: 240,
+    menuChanged: false,
+    menuDetails: 'Executive VIP Banquet: Grilled Lamb, Fresh Saffron Rice, Mezza and Arabic Sweets.',
+    invitedEmployees: []
+  },
+  {
+    id: 'EVT-1002',
+    title: 'Year-End Corporate Banquet',
+    day: '18',
+    month: 'Dec',
+    fullDate: '2026-12-18',
+    time: '19:00 - 22:00',
+    location: 'Main Camp Mess Hall',
+    description: 'Annual Al-Haditha personnel appreciation banquet.',
+    category: 'Corporate / Special Banquet',
+    status: 'Confirmed',
+    statusType: 'success',
+    invitedCount: 12,
+    expectedCount: 12,
+    perPersonBudget: 25,
+    overallBudget: 300,
+    menuChanged: false,
+    menuDetails: 'Holiday Special Buffet: Roasted Lamb, Biryani, Fresh Mezza, Fruit Platters and Sweets.',
+    invitedEmployees: []
+  }
+];
+
+export const defaultAlHadithaEvent = defaultAlHadithaEvents[1];
 
 // Central helper to dynamically synchronize all dashboard metrics directly with actual mealEntries
 export function harmonizeStateMetrics(state) {

@@ -192,10 +192,10 @@ export default function Employees() {
     const query = searchQuery.toLowerCase().trim();
     const matchesSearch =
       !query ||
-      emp.id.toLowerCase().includes(query) ||
-      emp.name.toLowerCase().includes(query) ||
-      emp.department.toLowerCase().includes(query) ||
-      emp.designation.toLowerCase().includes(query);
+      (emp.id && emp.id.toLowerCase().includes(query)) ||
+      (emp.name && emp.name.toLowerCase().includes(query)) ||
+      (emp.department && emp.department.toLowerCase().includes(query)) ||
+      (emp.designation && emp.designation.toLowerCase().includes(query));
     return matchesCategory && matchesSearch;
   });
 
@@ -205,16 +205,9 @@ export default function Employees() {
       {/* Top Banner & Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-surface-border shadow-card">
         <div>
-          <div className="flex items-center space-x-2 text-brand-blue font-semibold text-xs uppercase tracking-wider">
-            <Users className="w-4 h-4 text-brand-blue" />
-            <span>Master Workforce Registry</span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-primary tracking-tight mt-1">
+          <h1 className="text-2xl font-bold text-slate-primary tracking-tight">
             Al-Haditha Employees Management
           </h1>
-          <p className="text-xs sm:text-sm text-slate-secondary mt-1">
-            Manage company personnel, filter by tier category (Junior, Senior), and add or remove staff records.
-          </p>
         </div>
 
         <button
@@ -469,21 +462,18 @@ export default function Employees() {
             <thead className="bg-slate-50/90 border-b border-surface-border text-slate-secondary text-[10px] uppercase font-bold tracking-wider">
               <tr>
                 <th className="px-4 py-3.5 text-left w-28 whitespace-nowrap">Employee ID</th>
-                <th className="px-4 py-3.5 text-left min-w-[190px] whitespace-nowrap">Full Name</th>
+                <th className="px-4 py-3.5 text-left min-w-[200px] whitespace-nowrap">Full Name</th>
                 <th className="px-4 py-3.5 text-center w-28 whitespace-nowrap">Category</th>
-                <th className="px-4 py-3.5 text-left min-w-[200px] whitespace-nowrap">Department & Role</th>
-                <th className="px-4 py-3.5 text-center w-24 whitespace-nowrap">Daily Quota</th>
                 <th className="px-4 py-3.5 text-center w-28 whitespace-nowrap">Monthly Quota</th>
                 <th className="px-4 py-3.5 text-center w-28 whitespace-nowrap">Consumed</th>
-                <th className="px-4 py-3.5 text-center w-40 whitespace-nowrap">Remaining Balance</th>
-                <th className="px-4 py-3.5 text-center w-28 whitespace-nowrap">Status</th>
+                <th className="px-4 py-3.5 text-center w-36 whitespace-nowrap">Remaining Balance</th>
                 <th className="px-4 py-3.5 text-center w-20 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
               {filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="p-8 text-center text-slate-secondary text-xs">
+                  <td colSpan="7" className="p-8 text-center text-slate-secondary text-xs">
                     No employees found matching the filter "{selectedCategory}" or query "{searchQuery}".
                   </td>
                 </tr>
@@ -513,7 +503,7 @@ export default function Employees() {
                           }`}>
                             {emp.name.charAt(0)}
                           </div>
-                          <span className="font-semibold text-slate-900 truncate max-w-[170px] block" title={emp.name}>
+                          <span className="font-semibold text-slate-900 truncate max-w-[220px] block" title={emp.name}>
                             {emp.name}
                           </span>
                         </div>
@@ -530,21 +520,6 @@ export default function Employees() {
                             {emp.category}
                           </span>
                         </div>
-                      </td>
-
-                      {/* Department & Role */}
-                      <td className="px-4 py-3.5 text-left">
-                        <span className="text-slate-900 font-semibold block truncate max-w-[220px]" title={emp.designation}>
-                          {emp.designation}
-                        </span>
-                        <span className="text-[11px] text-slate-500 block truncate max-w-[220px]" title={emp.department}>
-                          {emp.department}
-                        </span>
-                      </td>
-
-                      {/* Daily Quota */}
-                      <td className="px-4 py-3.5 text-center font-medium text-slate-700 whitespace-nowrap">
-                        3 Meals
                       </td>
 
                       {/* Monthly Quota */}
@@ -568,35 +543,15 @@ export default function Employees() {
                       {/* Remaining Balance - Uniform & Centered Bubble */}
                       <td className="px-4 py-3.5 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center">
-                          <span className="inline-flex items-center justify-center min-w-[125px] px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-brand-green border border-emerald-300 shadow-2xs text-center">
+                          <span className="inline-flex items-center justify-center min-w-[110px] px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-brand-green border border-emerald-300 shadow-2xs text-center">
                             <span>{alloc.remainingMonthlyAllocations} Meals</span>
-                            {alloc.consumedCount > 0 && (
-                              <span className="text-[10px] text-emerald-700 font-bold ml-1">(-{alloc.consumedCount})</span>
-                            )}
                           </span>
                         </div>
                       </td>
 
-                      {/* Status - Uniform & Centered Bubble */}
+                      {/* Actions: Delete only (eye button removed) */}
                       <td className="px-4 py-3.5 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center">
-                          <span className="inline-flex items-center justify-center min-w-[76px] space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-brand-green border border-emerald-200 text-center">
-                            <span className="w-1.5 h-1.5 rounded-full bg-brand-green" />
-                            <span>Active</span>
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Actions: View Ledger & Delete */}
-                      <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center space-x-1">
-                          <button
-                            onClick={() => setSelectedEmployeeLedger({ emp, alloc })}
-                            className="p-1.5 text-slate-400 hover:text-brand-blue rounded-lg hover:bg-sky-50 transition-colors cursor-pointer"
-                            title={`View Allocation Ledger for ${emp.name}`}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
                           <button
                             onClick={() => setEmployeeToDelete(emp)}
                             className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
@@ -626,7 +581,6 @@ export default function Employees() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         title="Add New Employee Record"
-        subtitle="Register staff into the master database with ID, Name, and Entitlement Category."
       >
         <form onSubmit={handleAddSubmit} className="space-y-4 text-xs">
           
@@ -685,59 +639,6 @@ export default function Employees() {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Department */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-primary mb-1">
-              Department
-            </label>
-            <select
-              value={newDepartment}
-              onChange={(e) => setNewDepartment(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green bg-white"
-            >
-              <option value="Field Operations">Field Operations</option>
-              <option value="Maintenance">Maintenance</option>
-              <option value="Camp & Mess Catering">Camp & Mess Catering</option>
-              <option value="HSE & Security">HSE & Security</option>
-              <option value="Drilling & Completions">Drilling & Completions</option>
-              <option value="Logistics">Logistics</option>
-              <option value="Engineering & Projects">Engineering & Projects</option>
-              <option value="Executive Management">Executive Management</option>
-              <option value="Finance & Accounts">Finance & Accounts</option>
-            </select>
-          </div>
-
-          {/* Designation / Job Title */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-primary mb-1">
-              Designation / Role Title
-            </label>
-            <input
-              type="text"
-              value={newDesignation}
-              onChange={(e) => setNewDesignation(e.target.value)}
-              placeholder="e.g. Rig Technician, Senior Petroleum Engineer"
-              className="w-full px-3 py-2 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green"
-            />
-          </div>
-
-          {/* Shift */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-primary mb-1">
-              Shift Schedule
-            </label>
-            <select
-              value={newShift}
-              onChange={(e) => setNewShift(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green bg-white"
-            >
-              <option value="Day Shift">Day Shift</option>
-              <option value="Night Shift">Night Shift</option>
-              <option value="Rotational">Rotational</option>
-              <option value="Executive">Executive</option>
-            </select>
           </div>
 
           {/* Actions */}

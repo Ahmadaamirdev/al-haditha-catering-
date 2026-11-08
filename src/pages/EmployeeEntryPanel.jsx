@@ -155,11 +155,11 @@ export default function EmployeeEntryPanel() {
                 className="h-10 sm:h-11 w-auto object-contain flex-shrink-0" 
               />
               <div className="h-9 w-px bg-slate-200 shrink-0" />
-              <div className="flex flex-col justify-center text-left">
-                <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-tight">
+              <div className="flex flex-col justify-center text-left min-w-0">
+                <h2 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight leading-tight whitespace-nowrap">
                   Employee Meal Check-In
                 </h2>
-                <span className="text-[11px] font-semibold text-brand-green uppercase tracking-wide block mt-0.5">
+                <span className="text-[11px] font-semibold text-brand-green uppercase tracking-wide block mt-0.5 whitespace-nowrap">
                   Al-Haditha Petroleum Services
                 </span>
               </div>
@@ -388,15 +388,6 @@ export default function EmployeeEntryPanel() {
 
               </form>
             )}
-
-            {/* Bottom Sync Indicator */}
-            <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-              <span className="flex items-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>100 Staff Records Loaded</span>
-              </span>
-              <span className="text-emerald-700 font-semibold">Real-time sync</span>
-            </div>
 
           </div>
 

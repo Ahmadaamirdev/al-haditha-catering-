@@ -4,7 +4,7 @@ import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 import { alHadithaEmployees } from './src/data/employeesData.js';
 import { initialMockData } from './src/data/mockData.js';
-import { harmonizeStateMetrics, defaultAlHadithaEvent } from './src/utils/harmonizeEngine.js';
+import { harmonizeStateMetrics, defaultAlHadithaEvents, defaultAlHadithaEvent } from './src/utils/harmonizeEngine.js';
 
 dotenv.config();
 
@@ -79,8 +79,13 @@ app.get('/api/data', async (req, res) => {
     // Always retrieve latest events from events collection
     const eventsCol = database.collection('events');
     let dbEvents = await eventsCol.find({}).toArray();
-    if (dbEvents.length === 0) {
-      dbEvents = [defaultAlHadithaEvent];
+    if (dbEvents.length < defaultAlHadithaEvents.length) {
+      const existingIds = new Set(dbEvents.map((e) => e.id));
+      const toAdd = defaultAlHadithaEvents.filter((e) => !existingIds.has(e.id));
+      if (toAdd.length > 0) {
+        await eventsCol.insertMany(toAdd);
+        dbEvents = await eventsCol.find({}).toArray();
+      }
     }
 
     if (!state) {
