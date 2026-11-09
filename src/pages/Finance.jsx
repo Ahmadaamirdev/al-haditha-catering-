@@ -112,7 +112,7 @@ export default function Finance() {
     if (targetMonth) {
       const stats = calculateMonthCalendar(targetMonth.year, targetMonth.monthIndex);
       if (generateMonthlyAllocation) {
-        generateMonthlyAllocation(monthLabel, stats.workingDaysCount, !isUserExplicit);
+        generateMonthlyAllocation(monthLabel, stats.workingDaysCount, true);
       }
     }
   };
