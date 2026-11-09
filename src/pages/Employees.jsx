@@ -25,12 +25,7 @@ import { useApp } from '../context/AppContext';
 import Modal from '../components/common/Modal';
 import { getEmployeesAllocationMap, calculateMonthCalendar } from '../utils/allocationEngine';
 import { getCurrentMonthLabel, getCurrentMonthObj } from '../utils/harmonizeEngine';
-
-// Deterministic 10 Contract-Based Employees (5 Junior, 5 Senior)
-export const CONTRACT_EMPLOYEE_IDS = new Set([
-  'AHP-1004', 'AHP-1011', 'AHP-1018', 'AHP-1025', 'AHP-1033', // 5 Junior
-  'AHP-1044', 'AHP-1051', 'AHP-1059', 'AHP-1066', 'AHP-1073'  // 5 Senior
-]);
+import { CONTRACT_EMPLOYEE_IDS } from '../data/employeesData';
 
 export default function Employees() {
   const { data, addEmployee, deleteEmployee, addToast } = useApp();

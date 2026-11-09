@@ -1,6 +1,12 @@
 // Employees Dataset for Al-Haditha Petroleum Services (AHP)
 // Distribution: 40 Junior, 40 Senior (Total: 80 Employees)
 
+// Deterministic 10 Contract-Based Employees (5 Junior, 5 Senior)
+export const CONTRACT_EMPLOYEE_IDS = new Set([
+  'AHP-1004', 'AHP-1011', 'AHP-1018', 'AHP-1025', 'AHP-1033', // 5 Junior
+  'AHP-1044', 'AHP-1051', 'AHP-1059', 'AHP-1066', 'AHP-1073'  // 5 Senior
+]);
+
 export const alHadithaEmployees = [
   // ==========================================
   // JUNIOR CATEGORY (40 Employees: AHP-1001 to AHP-1040)

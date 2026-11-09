@@ -14,6 +14,7 @@ import {
   Search
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { CONTRACT_EMPLOYEE_IDS } from '../../data/employeesData';
 
 export default function LiveAttendanceOverview() {
   const { data, deleteMealEntry, recordMealEntry } = useApp();
@@ -280,18 +281,36 @@ export default function LiveAttendanceOverview() {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
-              {filteredEntries.slice(0, 15).map((entry) => (
-                <tr key={entry.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-4 py-2.5 font-mono text-slate-600 whitespace-nowrap">
-                    <span className="font-semibold">{entry.date || todayIso}</span>{' '}
-                    <span className="text-slate-400">{entry.timestamp}</span>
-                  </td>
-                  <td className="px-4 py-2.5 font-bold font-mono text-slate-primary">
-                    {entry.employeeId}
-                  </td>
-                  <td className="px-4 py-2.5 font-semibold text-slate-primary">
-                    {entry.employeeName}
-                  </td>
+              {filteredEntries.slice(0, 15).map((entry) => {
+                const isContract = entry.isContract === true || CONTRACT_EMPLOYEE_IDS.has(entry.employeeId);
+                return (
+                  <tr key={entry.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="px-4 py-2.5 font-mono text-slate-600 whitespace-nowrap">
+                      <span className="font-semibold">{entry.date || todayIso}</span>{' '}
+                      <span className="text-slate-400">{entry.timestamp}</span>
+                    </td>
+                    <td className="px-4 py-2.5 font-bold font-mono text-slate-primary">
+                      {entry.employeeId}
+                    </td>
+                    <td className="px-4 py-2.5 text-left">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-semibold text-slate-primary truncate max-w-[200px]" title={entry.employeeName}>
+                          {entry.employeeName}
+                        </span>
+                        {isContract && (
+                          <span
+                            className={`w-4.5 h-4.5 rounded-full inline-flex items-center justify-center font-bold text-[10px] flex-shrink-0 shadow-2xs ${
+                              entry.category === 'Junior'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-sky-100 text-sky-800 border border-sky-300'
+                            }`}
+                            title="Contract-Based Employee (Contractor)"
+                          >
+                            C
+                          </span>
+                        )}
+                      </div>
+                    </td>
                   <td className="px-4 py-2.5">
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       entry.category === 'Junior' ? 'bg-emerald-100 text-emerald-800' :
@@ -326,8 +345,9 @@ export default function LiveAttendanceOverview() {
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
+              );
+            })}
+          </tbody>
           </table>
         </div>
       )}
