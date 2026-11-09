@@ -239,7 +239,7 @@ export default function Events() {
             <span>VIP & Special Catering</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-primary tracking-tight mt-1">
-            Corporate Events, Banquets & VIP Dining
+            Corporate Events & VIP Dining
           </h1>
         </div>
 

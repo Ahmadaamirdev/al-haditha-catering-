@@ -28,7 +28,7 @@ async function connectToMongo() {
   try {
     client = new MongoClient(MONGODB_URI, {
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 15000,
     });
     await client.connect();
     db = client.db('al_haditha_catering');
