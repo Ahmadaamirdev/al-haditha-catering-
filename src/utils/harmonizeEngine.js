@@ -104,11 +104,37 @@ export const defaultNovemberEvents = [
 export const defaultAlHadithaEvents = defaultNovemberEvents;
 export const defaultAlHadithaEvent = defaultNovemberEvents[1];
 
+// Helper to accurately sort meal entries in descending chronological order (newest first)
+export function sortMealEntriesDescending(entries) {
+  if (!Array.isArray(entries)) return [];
+  return [...entries].sort((a, b) => {
+    const parseTime = (e) => {
+      if (!e) return 0;
+      const d = e.date || '1970-01-01';
+      const t = e.timestamp || '';
+      let hours = 0;
+      let mins = 0;
+      const match = t.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (match) {
+        hours = parseInt(match[1], 10);
+        mins = parseInt(match[2], 10);
+        const ampm = (match[3] || '').toUpperCase();
+        if (ampm === 'PM' && hours < 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+      }
+      const timeMs = new Date(`${d}T${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`).getTime();
+      return isNaN(timeMs) ? 0 : timeMs;
+    };
+    return parseTime(b) - parseTime(a);
+  });
+}
+
 // Central helper to dynamically synchronize all dashboard metrics directly with actual mealEntries
 export function harmonizeStateMetrics(state) {
   if (!state) return state;
 
-  const entries = state.mealEntries || [];
+  const rawEntries = state.mealEntries || [];
+  const entries = sortMealEntriesDescending(rawEntries);
   const juniorCount = entries.filter((m) => (m.category || '').toLowerCase() === 'junior').length;
   const seniorCount = entries.filter((m) => (m.category || '').toLowerCase() === 'senior').length;
   const totalConsumed = juniorCount + seniorCount;
@@ -173,6 +199,7 @@ export function harmonizeStateMetrics(state) {
 
   return {
     ...state,
+    mealEntries: entries,
     selectedMonth: effectiveMonth,
     events: currentEvents,
     employeeOverview: updatedEmployeeOverview,

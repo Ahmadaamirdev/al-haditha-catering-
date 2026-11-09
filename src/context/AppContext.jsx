@@ -99,7 +99,7 @@ export function AppProvider({ children }) {
                   (e) => (e.category || '').toUpperCase() !== 'VIP'
                 );
                 const entryMap = new Map();
-                [...(initialMockData.mealEntries || []), ...localEntries, ...mongoEntries].forEach((e) => {
+                [...localEntries, ...mongoEntries, ...(initialMockData.mealEntries || [])].forEach((e) => {
                   if (e && e.id && (e.category || '').toUpperCase() !== 'VIP') entryMap.set(e.id, e);
                 });
                 mergedData.mealEntries = Array.from(entryMap.values());

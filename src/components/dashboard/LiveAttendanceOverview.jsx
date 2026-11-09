@@ -6,10 +6,15 @@ export default function LiveAttendanceOverview() {
   const { data, deleteMealEntry, recordMealEntry } = useApp();
   const { mealEntries = [] } = data;
 
-  const todayIso = '2026-11-08';
-  const todayEntriesCount = mealEntries.filter(
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const exactTodayCount = mealEntries.filter(
     (e) => (e.date || '') === todayIso || (e.date || '').startsWith(todayIso)
   ).length;
+  const latestDate = mealEntries[0]?.date;
+  const todayEntriesCount = exactTodayCount > 0 
+    ? exactTodayCount 
+    : (latestDate ? mealEntries.filter((e) => e.date === latestDate).length : 0);
 
   const handleQuickAdd = (empId, empName, cat) => {
     recordMealEntry({
