@@ -129,6 +129,33 @@ export function sortMealEntriesDescending(entries) {
   });
 }
 
+// Dynamic Month Helpers - dynamically defaults to current calendar month & year
+export function getCurrentMonthLabel() {
+  const now = new Date();
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+}
+
+export function getCurrentMonthObj() {
+  const now = new Date();
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const monthIndex = now.getMonth();
+  const monthName = monthNames[monthIndex];
+  const year = now.getFullYear();
+  return {
+    label: `${monthName} ${year}`,
+    year,
+    monthIndex,
+    monthName,
+  };
+}
+
 // Central helper to dynamically synchronize all dashboard metrics directly with actual mealEntries
 export function harmonizeStateMetrics(state) {
   if (!state) return state;
@@ -189,12 +216,7 @@ export function harmonizeStateMetrics(state) {
   const currentEvents = Array.isArray(state.events) ? state.events : [];
 
   // 5. Current Month & Date synchronization (dynamically defaults to current date/month)
-  const now = new Date();
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  const currentMonthStr = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+  const currentMonthStr = getCurrentMonthLabel();
   const effectiveMonth = state.selectedMonth || currentMonthStr;
 
   return {

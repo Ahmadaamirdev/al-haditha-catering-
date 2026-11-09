@@ -51,6 +51,7 @@ export const alHadithaEmployees = [
     email: 'mohammed.harthy@alhaditha.om',
     phone: '+968 9123 4004',
     status: 'Active',
+    isContract: true,
     joinDate: '2022-11-20'
   },
   {
@@ -135,6 +136,7 @@ export const alHadithaEmployees = [
     email: 'fahad.jabri@alhaditha.om',
     phone: '+968 9123 4011',
     status: 'Active',
+    isContract: true,
     joinDate: '2023-07-11'
   },
   {
@@ -219,6 +221,7 @@ export const alHadithaEmployees = [
     email: 'haitham.saadi@alhaditha.om',
     phone: '+968 9123 4018',
     status: 'Active',
+    isContract: true,
     joinDate: '2023-05-29'
   },
   {
@@ -303,6 +306,7 @@ export const alHadithaEmployees = [
     email: 'saif.kiyumi@alhaditha.om',
     phone: '+968 9123 4025',
     status: 'Active',
+    isContract: true,
     joinDate: '2022-09-30'
   },
   {
@@ -399,6 +403,7 @@ export const alHadithaEmployees = [
     email: 'prakash.varma@alhaditha.om',
     phone: '+968 9123 4033',
     status: 'Active',
+    isContract: true,
     joinDate: '2023-02-03'
   },
   {
@@ -535,6 +540,7 @@ export const alHadithaEmployees = [
     email: 'sunil.varghese@alhaditha.om',
     phone: '+968 9234 5044',
     status: 'Active',
+    isContract: true,
     joinDate: '2020-08-14'
   },
   {
@@ -619,6 +625,7 @@ export const alHadithaEmployees = [
     email: 'nasser.ruzaiqi@alhaditha.om',
     phone: '+968 9234 5051',
     status: 'Active',
+    isContract: true,
     joinDate: '2020-01-20'
   },
   {
@@ -715,6 +722,7 @@ export const alHadithaEmployees = [
     email: 'asad.ajmi@alhaditha.om',
     phone: '+968 9234 5059',
     status: 'Active',
+    isContract: true,
     joinDate: '2021-03-12'
   },
   {
@@ -799,6 +807,7 @@ export const alHadithaEmployees = [
     email: 'saif.ghafri@alhaditha.om',
     phone: '+968 9234 5066',
     status: 'Active',
+    isContract: true,
     joinDate: '2020-04-18'
   },
   {
@@ -883,6 +892,7 @@ export const alHadithaEmployees = [
     email: 'younis.shezawi@alhaditha.om',
     phone: '+968 9234 5073',
     status: 'Active',
+    isContract: true,
     joinDate: '2020-03-26'
   },
   {

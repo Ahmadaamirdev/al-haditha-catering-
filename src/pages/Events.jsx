@@ -15,6 +15,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { getCurrentMonthLabel, getCurrentMonthObj } from '../utils/harmonizeEngine';
 import Modal from '../components/common/Modal';
 
 export default function Events() {
@@ -50,7 +51,7 @@ export default function Events() {
 
   // Synced month state from global data.selectedMonth
   const [selectedMonth, setSelectedMonth] = useState(() => {
-    return data.selectedMonth || 'November 2026';
+    return data.selectedMonth || getCurrentMonthLabel();
   });
 
   useEffect(() => {
@@ -60,12 +61,7 @@ export default function Events() {
   }, [data.selectedMonth]);
 
   const activeMonthObj = useMemo(() => {
-    return allMonths.find((m) => m.label === selectedMonth) || {
-      label: 'November 2026',
-      year: 2026,
-      monthIndex: 10,
-      monthName: 'November',
-    };
+    return allMonths.find((m) => m.label === selectedMonth) || getCurrentMonthObj();
   }, [allMonths, selectedMonth]);
 
   const currentMonthIdx = allMonths.findIndex((m) => m.label === selectedMonth);

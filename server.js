@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import dns from 'node:dns';
 import { alHadithaEmployees } from './src/data/employeesData.js';
 import { initialMockData } from './src/data/mockData.js';
-import { harmonizeStateMetrics, defaultNovemberEvents, defaultAlHadithaEvents, defaultAlHadithaEvent } from './src/utils/harmonizeEngine.js';
+import { harmonizeStateMetrics, getCurrentMonthLabel, defaultNovemberEvents, defaultAlHadithaEvents, defaultAlHadithaEvent } from './src/utils/harmonizeEngine.js';
 
 try {
   dns.setServers(['8.8.8.8', '1.1.1.1']);
@@ -105,7 +105,7 @@ app.get('/api/data', async (req, res) => {
       state = {
         _id: 'current_state',
         currency: 'OMR',
-        selectedMonth: 'November 2026',
+        selectedMonth: getCurrentMonthLabel(),
         currentDateFormatted: 'Monday, 3 Nov 2026',
         employees: alHadithaEmployees,
         employeeOverview: initialMockData.employeeOverview,
@@ -118,6 +118,7 @@ app.get('/api/data', async (req, res) => {
         events: dbEvents,
       };
     } else {
+      state.selectedMonth = state.selectedMonth || getCurrentMonthLabel();
       state.mealEntries = dbEntries.length > 0 ? dbEntries : (state.mealEntries || []);
       state.events = dbEvents;
     }

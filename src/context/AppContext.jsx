@@ -3,13 +3,14 @@ import { initialMockData } from '../data/mockData';
 import { alHadithaEmployees, matchEmployeeByIdAndName } from '../data/employeesData';
 import { getEmployeeRealtimeAllocations, calculateMonthCalendar, MEAL_WINDOWS, isEntryInMonthOrDate } from '../utils/allocationEngine';
 import { computeCategoryFinance } from '../utils/financeEngine';
-import { harmonizeStateMetrics, defaultNovemberEvents, defaultAlHadithaEvents, defaultAlHadithaEvent } from '../utils/harmonizeEngine';
+import { harmonizeStateMetrics, getCurrentMonthLabel, defaultNovemberEvents, defaultAlHadithaEvents, defaultAlHadithaEvent } from '../utils/harmonizeEngine';
 
 const AppContext = createContext(null);
-const STORAGE_KEY = 'alhaditha_mess_clean_v4';
+const STORAGE_KEY = 'alhaditha_mess_clean_v5';
 
 export function AppProvider({ children }) {
   const [data, setData] = useState(() => {
+    const currentMonth = getCurrentMonthLabel();
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -39,6 +40,9 @@ export function AppProvider({ children }) {
         });
         parsed.events = Array.from(eventMap.values());
 
+        // Always dynamic default to current calendar month on new load
+        parsed.selectedMonth = sessionStorage.getItem('alhaditha_session_month') || currentMonth;
+
         return harmonizeStateMetrics(parsed);
       }
     } catch {
@@ -46,6 +50,7 @@ export function AppProvider({ children }) {
     }
     return harmonizeStateMetrics({
       ...initialMockData,
+      selectedMonth: currentMonth,
       employees: alHadithaEmployees,
       events: defaultNovemberEvents,
     });
@@ -80,16 +85,17 @@ export function AppProvider({ children }) {
               try {
                 const localData = JSON.parse(localSaved);
                 
-                // Preserve local selectedMonth and mealAllocation if user selected or changed them locally
-                if (localData.selectedMonth) {
-                  mergedData.selectedMonth = localData.selectedMonth;
-                }
+                // Preserve local mealAllocation if user changed it locally
                 if (localData.mealAllocation) {
                   mergedData.mealAllocation = {
                     ...mergedData.mealAllocation,
                     ...localData.mealAllocation,
                   };
                 }
+
+                // Preserve user's active session month if explicitly chosen, otherwise dynamically default to the current calendar month
+                const sessionMonth = sessionStorage.getItem('alhaditha_session_month');
+                mergedData.selectedMonth = sessionMonth || getCurrentMonthLabel();
 
                 // 1. Merge Meal Entries (strictly excluding any VIP test entries)
                 const localEntries = (localData.mealEntries || []).filter(
@@ -371,6 +377,7 @@ export function AppProvider({ children }) {
       };
 
       try {
+        sessionStorage.setItem('alhaditha_session_month', month);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       } catch {}
 

@@ -18,6 +18,7 @@ import {
 import { useApp } from '../context/AppContext';
 import Modal from '../components/common/Modal';
 import { calculateMonthCalendar, isEntryInMonthOrDate } from '../utils/allocationEngine';
+import { getCurrentMonthLabel, getCurrentMonthObj } from '../utils/harmonizeEngine';
 
 export default function MealAllocation() {
   const { data, generateMonthlyAllocation, addToast } = useApp();
@@ -44,9 +45,9 @@ export default function MealAllocation() {
     return list;
   }, []);
 
-  // Initialize selected month from AppContext or default to November 2026
+  // Initialize selected month from AppContext or default to current calendar month
   const [selectedMonth, setSelectedMonth] = useState(() => {
-    return data.selectedMonth || 'November 2026';
+    return data.selectedMonth || getCurrentMonthLabel();
   });
 
   useEffect(() => {
@@ -57,12 +58,7 @@ export default function MealAllocation() {
 
   // Find active month object
   const activeMonthObj = useMemo(() => {
-    return allMonths.find((m) => m.label === selectedMonth) || {
-      label: 'November 2026',
-      year: 2026,
-      monthIndex: 10,
-      monthName: 'November',
-    };
+    return allMonths.find((m) => m.label === selectedMonth) || getCurrentMonthObj();
   }, [allMonths, selectedMonth]);
 
   // Dynamically calculate calendar statistics based on month day count & Friday/Saturday count

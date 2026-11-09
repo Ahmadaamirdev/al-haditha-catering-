@@ -24,6 +24,13 @@ import {
 import { useApp } from '../context/AppContext';
 import Modal from '../components/common/Modal';
 import { getEmployeesAllocationMap, calculateMonthCalendar } from '../utils/allocationEngine';
+import { getCurrentMonthLabel, getCurrentMonthObj } from '../utils/harmonizeEngine';
+
+// Deterministic 10 Contract-Based Employees (5 Junior, 5 Senior)
+export const CONTRACT_EMPLOYEE_IDS = new Set([
+  'AHP-1004', 'AHP-1011', 'AHP-1018', 'AHP-1025', 'AHP-1033', // 5 Junior
+  'AHP-1044', 'AHP-1051', 'AHP-1059', 'AHP-1066', 'AHP-1073'  // 5 Senior
+]);
 
 export default function Employees() {
   const { data, addEmployee, deleteEmployee, addToast } = useApp();
@@ -51,16 +58,11 @@ export default function Employees() {
   }, []);
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
-    return data.selectedMonth || 'November 2026';
+    return data.selectedMonth || getCurrentMonthLabel();
   });
 
   const activeMonthObj = useMemo(() => {
-    return allMonths.find((m) => m.label === selectedMonth) || {
-      label: 'November 2026',
-      year: 2026,
-      monthIndex: 10,
-      monthName: 'November',
-    };
+    return allMonths.find((m) => m.label === selectedMonth) || getCurrentMonthObj();
   }, [allMonths, selectedMonth]);
 
   const monthStats = useMemo(() => {
@@ -486,6 +488,8 @@ export default function Employees() {
                     remainingMonthlyAllocations: monthStats.allocationsPerEmployee || 66
                   };
 
+                  const isContract = emp.isContract === true || CONTRACT_EMPLOYEE_IDS.has(emp.id);
+
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/80 transition-colors">
                       {/* ID */}
@@ -493,19 +497,24 @@ export default function Employees() {
                         {emp.id}
                       </td>
 
-                      {/* Name with initials avatar */}
+                      {/* Name with Contract-based 'C' badge (clean flush-left alignment for all names) */}
                       <td className="px-4 py-3.5 text-left">
-                        <div className="flex items-center space-x-2.5">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[11px] flex-shrink-0 ${
-                            emp.category === 'Junior' ? 'bg-emerald-100 text-emerald-800' :
-                            emp.category === 'Senior' ? 'bg-sky-100 text-sky-800' :
-                            'bg-purple-100 text-purple-800'
-                          }`}>
-                            {emp.name.charAt(0)}
-                          </div>
-                          <span className="font-semibold text-slate-900 truncate max-w-[220px] block" title={emp.name}>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold text-slate-900 truncate max-w-[220px]" title={emp.name}>
                             {emp.name}
                           </span>
+                          {isContract && (
+                            <span
+                              className={`w-5 h-5 rounded-full inline-flex items-center justify-center font-bold text-[10.5px] flex-shrink-0 shadow-2xs ${
+                                emp.category === 'Junior'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  : 'bg-sky-100 text-sky-800 border border-sky-300'
+                              }`}
+                              title="Contract-Based Employee (Contractor)"
+                            >
+                              C
+                            </span>
+                          )}
                         </div>
                       </td>
 
