@@ -213,47 +213,6 @@ export default function LiveAttendanceOverview() {
           </div>
         </div>
 
-        {/* Quick Date Presets */}
-        <div className="flex items-center flex-wrap gap-1 text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
-          <span className="font-semibold text-slate-400 mr-1">Quick Dates:</span>
-          <button
-            type="button"
-            onClick={() => setSelectedDate(todayIso)}
-            className={`px-2 py-0.5 rounded transition-colors ${
-              selectedDate === todayIso
-                ? 'bg-brand-green/10 text-brand-green font-bold'
-                : 'hover:text-slate-900 hover:bg-slate-200/50'
-            }`}
-          >
-            Today ({todayIso})
-          </button>
-          {availableDates.slice(0, 4).map((d) => {
-            if (d === todayIso) return null;
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setSelectedDate(d)}
-                className={`px-2 py-0.5 rounded transition-colors ${
-                  selectedDate === d
-                    ? 'bg-brand-green/10 text-brand-green font-bold'
-                    : 'hover:text-slate-900 hover:bg-slate-200/50'
-                }`}
-              >
-                {d}
-              </button>
-            );
-          })}
-          {selectedDate && (
-            <button
-              type="button"
-              onClick={() => setSelectedDate('')}
-              className="px-2 py-0.5 rounded text-rose-600 hover:bg-rose-50 font-semibold ml-auto"
-            >
-              Clear Date Filter
-            </button>
-          )}
-        </div>
       </div>
 
       {/* When Empty: Clean, simple, friendly testing prompt or no matches state */}
