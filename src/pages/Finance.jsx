@@ -777,6 +777,8 @@ export default function Finance() {
           {monthDays.map((d) => {
             const dateStr = `${calendarYear}-${String(calendarMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const isSelected = filterStartDate === dateStr && filterEndDate === dateStr;
+            const dayOfWeek = (firstDayOfWeek + d - 1) % 7; // 0 = Sun, 5 = Fri, 6 = Sat
+            const isOffDay = dayOfWeek === 5 || dayOfWeek === 6;
             const dayEvents = eventsByDay[d] || [];
             const hasEvent = dayEvents.length > 0;
 
@@ -789,9 +791,11 @@ export default function Finance() {
                     ? 'ring-2 ring-brand-green border-brand-green bg-emerald-50 shadow-xs'
                     : hasEvent
                     ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-300 shadow-2xs hover:border-amber-400'
+                    : isOffDay
+                    ? 'bg-white border-red-500 hover:border-red-600 hover:bg-red-50/20'
                     : 'bg-white border-surface-border hover:border-slate-300 hover:bg-slate-50/50'
                 }`}
-                title={hasEvent ? `Event on ${d} ${monthNames[calendarMonthIdx]}: Click to filter budget` : `Day ${d}: Click to filter budget`}
+                title={hasEvent ? `Event on ${d} ${monthNames[calendarMonthIdx]}: Click to filter budget` : isOffDay ? `Day ${d} (Off Day): Click to filter budget` : `Day ${d}: Click to filter budget`}
               >
                 <div className="flex items-center justify-between">
                   <span className={`text-xs font-bold ${
@@ -831,11 +835,11 @@ export default function Finance() {
                       </div>
                     ))}
                   </div>
-                ) : (
+                ) : !isOffDay ? (
                   <div className="text-right">
                     <span className="text-[10px] text-slate-300 font-medium">Regular Mess</span>
                   </div>
-                )}
+                ) : null}
               </div>
             );
           })}
