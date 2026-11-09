@@ -11,6 +11,7 @@ import Events from './pages/Events';
 import Settings from './pages/Settings';
 import EmployeeEntryPanel from './pages/EmployeeEntryPanel';
 import Employees from './pages/Employees';
+import Records from './pages/Records';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -37,6 +38,8 @@ export default function App() {
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="employees" element={<Employees />} />
+            <Route path="records" element={<Records />} />
+            <Route path="entry-panel" element={<EmployeeEntryPanel />} />
             <Route path="wastage" element={<WastageControl />} />
             <Route path="finance" element={<Finance />} />
             <Route path="allocation" element={<MealAllocation />} />

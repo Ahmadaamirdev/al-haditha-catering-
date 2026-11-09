@@ -10,7 +10,8 @@ import {
   LogOut,
   X,
   UserCheck,
-  Users
+  Users,
+  ClipboardList
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import logoAsset from '../../assets/logo.png';
@@ -24,6 +25,7 @@ export default function Sidebar() {
     { name: 'Dashboard', path: '/', icon: Home },
     { name: 'Employees', path: '/employees', icon: Users },
     { name: 'Entry Panel', path: '/entry', icon: UserCheck },
+    { name: 'Records', path: '/records', icon: ClipboardList },
     { name: 'Wastage Control', path: '/wastage', icon: PieChart },
     { name: 'Finance', path: '/finance', icon: Wallet },
     { name: 'Events', path: '/events', icon: CalendarDays },
@@ -117,7 +119,7 @@ export default function Sidebar() {
           <div className="space-y-1.5">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 text-left"
+              className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 text-left cursor-pointer"
             >
               <LogOut className="w-5 h-5 text-slate-400" />
               <span className="tracking-wide">Logout</span>
@@ -128,4 +130,3 @@ export default function Sidebar() {
     </>
   );
 }
-
