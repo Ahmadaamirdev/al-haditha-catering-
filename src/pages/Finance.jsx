@@ -351,119 +351,6 @@ export default function Finance() {
         </div>
       </div>
 
-      {/* Category Rates Overview Banner Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Junior */}
-        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all relative overflow-hidden flex flex-col justify-between space-y-4">
-          <div className="absolute top-0 right-0 w-28 h-28 bg-brand-green/5 rounded-bl-full pointer-events-none" />
-          
-          {/* Top: Icon, Tier Title & 5 OMR Rate */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-green-light flex items-center justify-center text-brand-green shadow-xs flex-shrink-0">
-                <User className="w-5 h-5 text-brand-green" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                  Junior Employee Tier
-                </span>
-                <span className="text-xs text-slate-600 font-medium">
-                  Standard Mess Allowance
-                </span>
-              </div>
-            </div>
-
-            {/* 5 OMR at Top */}
-            <div className="text-right">
-              <span className="inline-flex items-baseline space-x-1 px-3 py-1 rounded-xl bg-slate-50 border border-slate-200 text-slate-800">
-                <strong className="text-sm font-extrabold text-slate-900">{financeOverview.categoryRates.junior.rate} {currency}</strong>
-                <span className="text-[11px] text-slate-500 font-medium">/ person / meal</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Center: Main Metrics (Monthly Allocation Pool & Spent) with Bigger Font Size */}
-          <div className="grid grid-cols-2 gap-4 py-1 text-center items-center">
-            {/* Monthly Allocation */}
-            <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-100 flex flex-col items-center justify-center">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                Monthly Allocation
-              </span>
-              <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-                13,200 <span className="text-base font-bold text-slate-600">{currency}</span>
-              </p>
-              <span className="text-[10px] text-slate-400 mt-0.5">Approved Category Pool</span>
-            </div>
-
-            {/* Realized Spent */}
-            <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-100 flex flex-col items-center justify-center">
-              <span className="text-[11px] font-bold text-brand-green uppercase tracking-wider block">
-                Total Realized Spent
-              </span>
-              <p className="text-2xl sm:text-3xl font-black text-brand-green tracking-tight mt-1">
-                {fin.jrSpent} <span className="text-base font-bold text-emerald-700">{currency}</span>
-              </p>
-              <span className="text-[10px] text-emerald-800 font-semibold mt-0.5">{fin.jrMeals} Meals Consumed</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Senior */}
-        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all relative overflow-hidden flex flex-col justify-between space-y-4">
-          <div className="absolute top-0 right-0 w-28 h-28 bg-brand-blue/5 rounded-bl-full pointer-events-none" />
-          
-          {/* Top: Icon, Tier Title & 10 OMR Rate */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-blue-light flex items-center justify-center text-brand-blue shadow-xs flex-shrink-0">
-                <Users className="w-5 h-5 text-brand-blue" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                  Senior Employee Tier
-                </span>
-                <span className="text-xs text-slate-600 font-medium">
-                  Senior Staff Allowance
-                </span>
-              </div>
-            </div>
-
-            {/* 10 OMR at Top */}
-            <div className="text-right">
-              <span className="inline-flex items-baseline space-x-1 px-3 py-1 rounded-xl bg-slate-50 border border-slate-200 text-slate-800">
-                <strong className="text-sm font-extrabold text-slate-900">{financeOverview.categoryRates.senior.rate} {currency}</strong>
-                <span className="text-[11px] text-slate-500 font-medium">/ person / meal</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Center: Main Metrics (Monthly Allocation Pool & Spent) with Bigger Font Size */}
-          <div className="grid grid-cols-2 gap-4 py-1 text-center items-center">
-            {/* Monthly Allocation */}
-            <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-100 flex flex-col items-center justify-center">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                Monthly Allocation
-              </span>
-              <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-                26,400 <span className="text-base font-bold text-slate-600">{currency}</span>
-              </p>
-              <span className="text-[10px] text-slate-400 mt-0.5">Approved Category Pool</span>
-            </div>
-
-            {/* Realized Spent */}
-            <div className="p-3.5 rounded-xl bg-sky-50/70 border border-sky-100 flex flex-col items-center justify-center">
-              <span className="text-[11px] font-bold text-brand-blue uppercase tracking-wider block">
-                Total Realized Spent
-              </span>
-              <p className="text-2xl sm:text-3xl font-black text-brand-blue tracking-tight mt-1">
-                {fin.srSpent} <span className="text-base font-bold text-sky-800">{currency}</span>
-              </p>
-              <span className="text-[10px] text-sky-800 font-semibold mt-0.5">{fin.srMeals} Meals Consumed</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Date Filter Bar - Positioned directly at top of Macro Budget Cards */}
       <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-surface-border shadow-card">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
@@ -542,6 +429,119 @@ export default function Finance() {
                   <X className="w-4 h-4" />
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Category Rates Overview Banner Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Junior */}
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all relative overflow-hidden flex flex-col justify-between space-y-4">
+          <div className="absolute top-0 right-0 w-28 h-28 bg-brand-green/5 rounded-bl-full pointer-events-none" />
+          
+          {/* Top: Icon, Tier Title & 5 OMR Rate */}
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-green-light flex items-center justify-center text-brand-green shadow-xs flex-shrink-0">
+                <User className="w-5 h-5 text-brand-green" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                  Junior Employee Tier
+                </span>
+                <span className="text-xs text-slate-600 font-medium">
+                  Standard Mess Allowance
+                </span>
+              </div>
+            </div>
+
+            {/* 5 OMR at Top */}
+            <div className="text-right">
+              <span className="inline-flex items-baseline space-x-1 px-3 py-1 rounded-xl bg-slate-50 border border-slate-200 text-slate-800">
+                <strong className="text-sm font-extrabold text-slate-900">{financeOverview.categoryRates.junior.rate} {currency}</strong>
+                <span className="text-[11px] text-slate-500 font-medium">/ person / meal</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Center: Main Metrics (Monthly Allocation Pool & Spent) with Bigger Font Size */}
+          <div className="grid grid-cols-2 gap-4 py-1 text-center items-center">
+            {/* Monthly Allocation */}
+            <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-100 flex flex-col items-center justify-center">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                Monthly Allocation
+              </span>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+                {(fin.budgetVsActual.find((b) => b.category === 'Junior')?.budget || 18000).toLocaleString()} <span className="text-base font-bold text-slate-600">{currency}</span>
+              </p>
+              <span className="text-[10px] text-slate-400 mt-0.5">Approved Category Pool</span>
+            </div>
+
+            {/* Realized Spent */}
+            <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-100 flex flex-col items-center justify-center">
+              <span className="text-[11px] font-bold text-brand-green uppercase tracking-wider block">
+                Total Realized Spent
+              </span>
+              <p className="text-2xl sm:text-3xl font-black text-brand-green tracking-tight mt-1">
+                {fin.jrSpent} <span className="text-base font-bold text-emerald-700">{currency}</span>
+              </p>
+              <span className="text-[10px] text-emerald-800 font-semibold mt-0.5">{fin.jrMeals} Meals Consumed</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Senior */}
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-surface-border shadow-card hover:shadow-card-hover transition-all relative overflow-hidden flex flex-col justify-between space-y-4">
+          <div className="absolute top-0 right-0 w-28 h-28 bg-brand-blue/5 rounded-bl-full pointer-events-none" />
+          
+          {/* Top: Icon, Tier Title & 10 OMR Rate */}
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-blue-light flex items-center justify-center text-brand-blue shadow-xs flex-shrink-0">
+                <Users className="w-5 h-5 text-brand-blue" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                  Senior Employee Tier
+                </span>
+                <span className="text-xs text-slate-600 font-medium">
+                  Senior Staff Allowance
+                </span>
+              </div>
+            </div>
+
+            {/* 10 OMR at Top */}
+            <div className="text-right">
+              <span className="inline-flex items-baseline space-x-1 px-3 py-1 rounded-xl bg-slate-50 border border-slate-200 text-slate-800">
+                <strong className="text-sm font-extrabold text-slate-900">{financeOverview.categoryRates.senior.rate} {currency}</strong>
+                <span className="text-[11px] text-slate-500 font-medium">/ person / meal</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Center: Main Metrics (Monthly Allocation Pool & Spent) with Bigger Font Size */}
+          <div className="grid grid-cols-2 gap-4 py-1 text-center items-center">
+            {/* Monthly Allocation */}
+            <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-100 flex flex-col items-center justify-center">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                Monthly Allocation
+              </span>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+                {(fin.budgetVsActual.find((b) => b.category === 'Senior')?.budget || 36000).toLocaleString()} <span className="text-base font-bold text-slate-600">{currency}</span>
+              </p>
+              <span className="text-[10px] text-slate-400 mt-0.5">Approved Category Pool</span>
+            </div>
+
+            {/* Realized Spent */}
+            <div className="p-3.5 rounded-xl bg-sky-50/70 border border-sky-100 flex flex-col items-center justify-center">
+              <span className="text-[11px] font-bold text-brand-blue uppercase tracking-wider block">
+                Total Realized Spent
+              </span>
+              <p className="text-2xl sm:text-3xl font-black text-brand-blue tracking-tight mt-1">
+                {fin.srSpent} <span className="text-base font-bold text-sky-800">{currency}</span>
+              </p>
+              <span className="text-[10px] text-sky-800 font-semibold mt-0.5">{fin.srMeals} Meals Consumed</span>
             </div>
           </div>
         </div>
@@ -690,7 +690,7 @@ export default function Finance() {
             <div className="border-l border-surface-border/60 pl-4 flex flex-col items-center justify-center text-center">
               <p className="text-xl sm:text-2xl font-bold text-slate-primary">{calendarStats.workingDaysCount} Days</p>
               <span className="text-xs text-slate-muted mt-1">
-                {calendarStats.fridaysCount} Fri + {calendarStats.saturdaysCount} Sat (0 Credits)
+                Continuous Operational Schedule (No Off Days)
               </span>
             </div>
           </div>
@@ -777,8 +777,6 @@ export default function Finance() {
           {monthDays.map((d) => {
             const dateStr = `${calendarYear}-${String(calendarMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const isSelected = filterStartDate === dateStr && filterEndDate === dateStr;
-            const dayOfWeek = (firstDayOfWeek + d - 1) % 7; // 0 = Sun, 5 = Fri, 6 = Sat
-            const isOffDay = dayOfWeek === 5 || dayOfWeek === 6;
             const dayEvents = eventsByDay[d] || [];
             const hasEvent = dayEvents.length > 0;
 
@@ -791,11 +789,9 @@ export default function Finance() {
                     ? 'ring-2 ring-brand-green border-brand-green bg-emerald-50 shadow-xs'
                     : hasEvent
                     ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-300 shadow-2xs hover:border-amber-400'
-                    : isOffDay
-                    ? 'bg-white border-red-500 hover:border-red-600 hover:bg-red-50/20'
                     : 'bg-white border-surface-border hover:border-slate-300 hover:bg-slate-50/50'
                 }`}
-                title={hasEvent ? `Event on ${d} ${monthNames[calendarMonthIdx]}: Click to filter budget` : isOffDay ? `Day ${d} (Off Day): Click to filter budget` : `Day ${d}: Click to filter budget`}
+                title={hasEvent ? `Event on ${d} ${monthNames[calendarMonthIdx]}: Click to filter budget` : `Day ${d}: Click to filter budget`}
               >
                 <div className="flex items-center justify-between">
                   <span className={`text-xs font-bold ${
@@ -835,11 +831,11 @@ export default function Finance() {
                       </div>
                     ))}
                   </div>
-                ) : !isOffDay ? (
+                ) : (
                   <div className="text-right">
                     <span className="text-[10px] text-slate-300 font-medium">Regular Mess</span>
                   </div>
-                ) : null}
+                )}
               </div>
             );
           })}

@@ -471,16 +471,12 @@ export default function Events() {
             {monthDaysList.map((dayNum) => {
               const dayEvents = events.filter((ev) => isEventInActiveMonth(ev, activeMonthObj.year, activeMonthObj.monthIndex) && getEventDay(ev) === dayNum);
               const hasEvents = dayEvents.length > 0;
-              const isWeekend = (leadingBlanks.length + dayNum - 1) % 7 === 5 || (leadingBlanks.length + dayNum - 1) % 7 === 6;
-
               return (
                 <div
                   key={dayNum}
                   className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-colors ${
                     hasEvents
                       ? 'border-brand-green bg-brand-green-light/30'
-                      : isWeekend
-                      ? 'border-surface-border/50 bg-slate-50/40'
                       : 'border-surface-border bg-white hover:bg-slate-50'
                   }`}
                 >
@@ -488,9 +484,6 @@ export default function Events() {
                     <span className={`text-xs font-bold ${hasEvents ? 'text-brand-green font-black' : 'text-slate-primary'}`}>
                       {dayNum}
                     </span>
-                    {isWeekend && (
-                      <span className="text-[9px] text-slate-400 font-medium">Off</span>
-                    )}
                   </div>
 
                   {hasEvents && (

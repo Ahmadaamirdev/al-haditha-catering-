@@ -187,7 +187,7 @@ export default function MealAllocation() {
             Employee Meal Allocation & Credit Entitlement
           </h1>
           <p className="text-xs sm:text-sm text-slate-secondary mt-1">
-            Automated quota generation based on active working days, shift patterns, and calendar off-days.
+            Automated quota generation based on daily operational schedules and continuous meal service.
           </p>
         </div>
 
@@ -309,12 +309,12 @@ export default function MealAllocation() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-secondary">Working Days</span>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-brand-green-light text-brand-green">
-              {calendarStats.offDaysCount} Weekend Days Off
+              Full Operation (No Off Days)
             </span>
           </div>
           <p className="text-2xl font-bold text-slate-primary mt-1">{calendarStats.workingDaysCount} Days</p>
           <span className="text-[11px] text-slate-muted">
-            {calendarStats.fridaysCount} Fri + {calendarStats.saturdaysCount} Sat (0 Credits)
+            Continuous 7-Day Operational Roster (3 Meals / Day)
           </span>
         </div>
 
@@ -353,7 +353,7 @@ export default function MealAllocation() {
             <div>
               <div className="flex items-center space-x-2">
                 <h2 className="text-base font-bold text-slate-primary">
-                  {calendarStats.monthName} {calendarStats.year} Operational Calendar & Camp Off-Days
+                  {calendarStats.monthName} {calendarStats.year} Operational Calendar & Meal Allocations
                 </h2>
                 <div className="flex items-center space-x-1 ml-1 bg-slate-100 p-0.5 rounded-lg border border-surface-border">
                   <button
@@ -377,7 +377,7 @@ export default function MealAllocation() {
                 </div>
               </div>
               <p className="text-xs text-slate-secondary mt-0.5">
-                Fridays & Saturdays automatically designated as Camp Off-Days (0 credits). Sunday through Thursday are active working days (3 meals/day).
+                Full operational schedule active across all 7 days of the week (3 meals/day for every operational day).
               </p>
             </div>
           </div>
@@ -390,9 +390,7 @@ export default function MealAllocation() {
             <div
               key={d}
               className={`text-center py-2 text-xs font-bold uppercase tracking-wider rounded-xl ${
-                idx === 5 || idx === 6
-                  ? 'bg-amber-50/80 text-amber-800 border border-amber-200/60'
-                  : 'bg-slate-50 text-slate-600 border border-slate-100'
+                'bg-slate-50 text-slate-600 border border-slate-100'
               }`}
             >
               {d}
@@ -500,7 +498,7 @@ export default function MealAllocation() {
 
           <div>
             <label className="block text-xs font-semibold text-slate-primary mb-1">
-              Working Days Count (Fri & Sat automatically excluded)
+              Operational Days Count
             </label>
             <input
               type="number"
@@ -512,7 +510,7 @@ export default function MealAllocation() {
               className="w-full px-3 py-2 text-xs border border-surface-border rounded-xl focus:outline-none focus:border-brand-green"
             />
             <p className="text-[11px] text-slate-muted mt-1">
-              {calendarStats.offDaysCount} off-days ({calendarStats.fridaysCount} Fridays + {calendarStats.saturdaysCount} Saturdays) excluded automatically.
+              Continuous daily operation: 3 meal allocations per staff daily across all {calendarStats.totalDays} days.
             </p>
           </div>
 
@@ -594,7 +592,7 @@ export default function MealAllocation() {
             </div>
 
             <p className="text-slate-secondary text-[11px]">
-              Tokens are refreshed daily at 00:00. Unconsumed tokens for previous shifts are purged daily to reflect accurate mess wastage data. Camp off-days (Fridays and Saturdays) are strictly excluded with 0 credits allotted.
+              Tokens are refreshed daily at 00:00. Unconsumed tokens for previous shifts are purged daily to reflect accurate mess wastage data. Continuous meal service active all 7 days with full daily meal credits.
             </p>
 
             <div className="flex justify-end pt-2">

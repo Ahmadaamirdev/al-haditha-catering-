@@ -1,16 +1,15 @@
 // Al-Haditha Petroleum Services - Automated Mess Allocation Engine
 // Rules:
-// 1. 3 meal allocations per employee per active working day.
-// 2. Fridays and Saturdays are OFF (0 allocations).
-// 3. Dynamic calculation based on exact days in month (30, 31, 28/29) and Friday/Saturday count.
-// 4. Meal time windows:
+// 1. 3 meal allocations per employee per day (Full 7-day operational schedule, no off days).
+// 2. Dynamic calculation based on exact days in month (30, 31, 28/29).
+// 3. Meal time windows:
 //    - Morning Breakfast: 09:00 - 10:00 AM (09:00 - 10:00)
 //    - Lunch: 02:00 - 03:00 PM (14:00 - 15:00)
 //    - Dinner: 07:00 - 08:00 PM (19:00 - 20:00)
-// 5. Deduction rules:
+// 4. Deduction rules:
 //    - When employee enters: 1 allocation is consumed & minused.
 //    - When a meal time window passes without an entry: 1 allocation expires & is minused.
-//    - Daily progression automatically minuses past working days' allocations.
+//    - Daily progression automatically minuses past days' allocations.
 //    - Real-time remaining allocations are displayed upon entry.
 
 export const MEAL_WINDOWS = [
@@ -121,7 +120,7 @@ export function isEntryInMonthOrDate(entry, targetYear, targetMonthIndex, target
 }
 
 /**
- * Calculates month statistics: total days, Friday & Saturday count, working days, and monthly credits per employee.
+ * Calculates month statistics: total operational days (all days are working days), and monthly credits per employee.
  */
 export function calculateMonthCalendar(year, monthIndex) {
   // Total days in month (monthIndex: 0 = Jan, 10 = Nov, 11 = Dec)
@@ -129,7 +128,7 @@ export function calculateMonthCalendar(year, monthIndex) {
 
   let fridaysCount = 0;
   let saturdaysCount = 0;
-  let workingDaysCount = 0;
+  let workingDaysCount = totalDays; // Every single day is an active working day
 
   const calendarDays = [];
 
@@ -137,24 +136,19 @@ export function calculateMonthCalendar(year, monthIndex) {
     const dateObj = new Date(year, monthIndex, d);
     const dayOfWeek = dateObj.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
 
-    const isFriday = dayOfWeek === 5;
-    const isSaturday = dayOfWeek === 6;
-    const isOffDay = isFriday || isSaturday;
-
-    if (isFriday) fridaysCount++;
-    if (isSaturday) saturdaysCount++;
-    if (!isOffDay) workingDaysCount++;
+    if (dayOfWeek === 5) fridaysCount++;
+    if (dayOfWeek === 6) saturdaysCount++;
 
     calendarDays.push({
       dayNumber: d,
       dayOfWeek,
       dayName: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek],
-      isOffDay,
-      dailyAllocation: isOffDay ? 0 : 3
+      isOffDay: false, // No off days in the company
+      dailyAllocation: 3
     });
   }
 
-  const offDaysCount = fridaysCount + saturdaysCount;
+  const offDaysCount = 0; // Continuous full operation
   const allocationsPerEmployee = workingDaysCount * 3;
 
   const monthNames = [
@@ -232,7 +226,7 @@ export function getEmployeeRealtimeAllocations({
   const currentTotalMins = currentHour * 60 + currentMinute;
 
   const monthStats = precomputedMonthStats || calculateMonthCalendar(year, monthIndex);
-  const totalMonthlyQuota = monthStats.allocationsPerEmployee; // e.g. 22 working days * 3 = 66
+  const totalMonthlyQuota = monthStats.allocationsPerEmployee; // Total operational days * 3
 
   // Find all meals logged by this employee for this month
   const empMonthEntries = (mealEntries || []).filter((e) => {
@@ -249,11 +243,6 @@ export function getEmployeeRealtimeAllocations({
   // Consumed count is the exact number of meals consumed by this employee
   const consumedCount = empMonthEntries.length;
 
-  // Track today's specific 3 meal windows status
-  const todayDateObj = new Date(year, monthIndex, currentDay);
-  const todayDayOfWeek = todayDateObj.getDay();
-  const isTodayOffDay = todayDayOfWeek === 5 || todayDayOfWeek === 6;
-
   const todayDateStr = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
   const todayEntries = empMonthEntries.filter((e) => e.date === todayDateStr);
 
@@ -264,7 +253,7 @@ export function getEmployeeRealtimeAllocations({
   let expiredCount = 0;
 
   const todayMealsStatus = {
-    isOffDay: isTodayOffDay,
+    isOffDay: false,
     breakfast: { status: 'AVAILABLE', label: '09:00 - 10:00', entry: null },
     lunch: { status: 'AVAILABLE', label: '14:00 - 15:00', entry: null },
     dinner: { status: 'AVAILABLE', label: '19:00 - 20:00', entry: null }
@@ -273,8 +262,6 @@ export function getEmployeeRealtimeAllocations({
   // 1. Breakfast (09:00 - 10:00)
   if (bfEntry) {
     todayMealsStatus.breakfast = { status: 'CONSUMED', label: '09:00 - 10:00', entry: bfEntry };
-  } else if (isTodayOffDay) {
-    todayMealsStatus.breakfast = { status: 'OFF_DAY', label: '09:00 - 10:00', entry: null };
   } else if (currentTotalMins >= 600) {
     expiredCount++;
     todayMealsStatus.breakfast = { status: 'EXPIRED', label: '09:00 - 10:00', entry: null };
@@ -289,8 +276,6 @@ export function getEmployeeRealtimeAllocations({
   // 2. Lunch (14:00 - 15:00)
   if (lunchEntry) {
     todayMealsStatus.lunch = { status: 'CONSUMED', label: '14:00 - 15:00', entry: lunchEntry };
-  } else if (isTodayOffDay) {
-    todayMealsStatus.lunch = { status: 'OFF_DAY', label: '14:00 - 15:00', entry: null };
   } else if (currentTotalMins >= 900) {
     expiredCount++;
     todayMealsStatus.lunch = { status: 'EXPIRED', label: '14:00 - 15:00', entry: null };
@@ -305,8 +290,6 @@ export function getEmployeeRealtimeAllocations({
   // 3. Dinner (19:00 - 20:00)
   if (dinnerEntry) {
     todayMealsStatus.dinner = { status: 'CONSUMED', label: '19:00 - 20:00', entry: dinnerEntry };
-  } else if (isTodayOffDay) {
-    todayMealsStatus.dinner = { status: 'OFF_DAY', label: '19:00 - 20:00', entry: null };
   } else if (currentTotalMins >= 1200) {
     expiredCount++;
     todayMealsStatus.dinner = { status: 'EXPIRED', label: '19:00 - 20:00', entry: null };
@@ -324,13 +307,9 @@ export function getEmployeeRealtimeAllocations({
 
   // Today remaining meals count
   let todayRemainingCount = 0;
-  if (!isTodayOffDay) {
-    if (todayMealsStatus.breakfast.status === 'ACTIVE_NOW' || todayMealsStatus.breakfast.status === 'UPCOMING') todayRemainingCount++;
-    if (todayMealsStatus.lunch.status === 'ACTIVE_NOW' || todayMealsStatus.lunch.status === 'UPCOMING') todayRemainingCount++;
-    if (todayMealsStatus.dinner.status === 'ACTIVE_NOW' || todayMealsStatus.dinner.status === 'UPCOMING') todayRemainingCount++;
-  } else {
-    todayRemainingCount = Math.max(0, 3 - todayEntries.length);
-  }
+  if (todayMealsStatus.breakfast.status === 'ACTIVE_NOW' || todayMealsStatus.breakfast.status === 'UPCOMING') todayRemainingCount++;
+  if (todayMealsStatus.lunch.status === 'ACTIVE_NOW' || todayMealsStatus.lunch.status === 'UPCOMING') todayRemainingCount++;
+  if (todayMealsStatus.dinner.status === 'ACTIVE_NOW' || todayMealsStatus.dinner.status === 'UPCOMING') todayRemainingCount++;
 
   return {
     employeeId,
@@ -343,7 +322,7 @@ export function getEmployeeRealtimeAllocations({
     todayRemainingCount,
     todayMealsStatus,
     activeDay: currentDay,
-    isTodayOffDay
+    isTodayOffDay: false
   };
 }
 

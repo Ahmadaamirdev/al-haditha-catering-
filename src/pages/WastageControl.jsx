@@ -86,23 +86,16 @@ export default function WastageControl() {
     });
   }, [mealEntries, startDate, endDate, todayIso]);
 
-  // Calculate total working days in the selected date range (excluding Fridays and Saturdays)
+  // Calculate total operational days in the selected date range (all days are working days)
   const workingDaysInRange = useMemo(() => {
     if (!startDate || !endDate) return 1;
     const start = new Date(startDate);
     const end = new Date(endDate);
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return 1;
 
-    let count = 0;
-    const cur = new Date(start);
-    while (cur <= end) {
-      const day = cur.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
-      if (day !== 5 && day !== 6) {
-        count++;
-      }
-      cur.setDate(cur.getDate() + 1);
-    }
-    return Math.max(1, count);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return Math.max(1, diffDays);
   }, [startDate, endDate]);
 
   const totalConsumed = filteredEntries.length;

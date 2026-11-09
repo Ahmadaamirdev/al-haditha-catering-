@@ -3,16 +3,17 @@
  * Synchronizes category expenditures, monthly allocation pools, and remaining liquidity directly with real meal entries.
  */
 
-// Monthly regular mess budget pool approved by Finance Board (excluding special events):
-// 1. Junior Category: 40 staff * 22 working days * 3 meals = 2,640 meals * 5 OMR = 13,200 OMR
-// 2. Senior Category: 40 staff * 22 working days * 3 meals = 2,640 meals * 10 OMR = 26,400 OMR
-// Total Regular Mess Budget = 13,200 + 26,400 = 39,600 OMR (Events are tracked independently)
+// Monthly regular mess budget pool approved by Finance Board (continuous 7-day operational schedule, no off days):
+// Basis: 30 days per month (standard mess operating month, 40 Junior staff, 40 Senior staff, 3 meals/day)
+// 1. Junior Category: 40 staff * 30 days * 3 meals = 3,600 meals * 5 OMR = 18,000 OMR
+// 2. Senior Category: 40 staff * 30 days * 3 meals = 3,600 meals * 10 OMR = 36,000 OMR
+// Total Regular Mess Budget = 18,000 + 36,000 = 54,000 OMR (Events are tracked independently)
 
 export const BASE_CATEGORY_BUDGETS = {
-  junior: 13200,
-  senior: 26400,
+  junior: 18000,
+  senior: 36000,
   vip: 0,
-  total: 39600,
+  total: 54000,
 };
 
 export function computeCategoryFinance({ financeOverview = {}, mealEntries = [] }) {

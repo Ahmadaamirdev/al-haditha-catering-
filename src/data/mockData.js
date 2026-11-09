@@ -73,9 +73,9 @@ export const initialMockData = {
       { category: 'Senior', remaining: 1650, status: 'Left' },
       { category: 'VIP', remaining: 850, status: 'Left' },
     ],
-    monthlyTotalBudget: 39600,
+    monthlyTotalBudget: 54000,
     monthlyExpenditure: 0,
-    monthlyRemaining: 39600,
+    monthlyRemaining: 54000,
     utilizationRate: 0,
     monthlyHistory: [
       { month: 'Jul', budget: 62000, actual: 58000 },
@@ -88,12 +88,12 @@ export const initialMockData = {
 
   // Meal Allocation Overview (80 Employees: 40 Jr, 40 Sr) - Starting at 0 consumed
   mealAllocation: {
-    workingDays: 22,
-    offDaysNote: 'Fri & Sat Off',
+    workingDays: 30,
+    offDaysNote: 'Full Operation',
     mealsPerPersonDay: 3,
     categories: [
-      { category: 'Junior', color: '#009B4D', dailyAllocation: '3 Meals / Day', remainingMonth: '66 Meals', totalEmployees: 40, monthlyCredits: 2640, consumedCredits: 0, remainingCredits: 2640 },
-      { category: 'Senior', color: '#1684AA', dailyAllocation: '3 Meals / Day', remainingMonth: '66 Meals', totalEmployees: 40, monthlyCredits: 2640, consumedCredits: 0, remainingCredits: 2640 },
+      { category: 'Junior', color: '#009B4D', dailyAllocation: '3 Meals / Day', remainingMonth: '90 Meals', totalEmployees: 40, monthlyCredits: 3600, consumedCredits: 0, remainingCredits: 3600 },
+      { category: 'Senior', color: '#1684AA', dailyAllocation: '3 Meals / Day', remainingMonth: '90 Meals', totalEmployees: 40, monthlyCredits: 3600, consumedCredits: 0, remainingCredits: 3600 },
     ]
   },
 
